@@ -259,6 +259,9 @@ export default {
 
     async logout() {
       try {
+        alert("You are about to log out. Please confirm your action.");
+        await this.$store.dispatch("currentUser/logout");
+
         await Cytomine.instance.logout();
         this.$store.dispatch("logout");
         this.changeLanguage();

@@ -20,14 +20,17 @@ import VueRouter from 'vue-router';
 import router from './routes.js';
 Vue.use(VueRouter);
 
+import VueCookies from 'vue-cookies';
+Vue.use(VueCookies);
+
 import i18n from './lang.js';
 
 import store from './store/store.js';
 
 import Buefy from 'buefy';
-Vue.use(Buefy, {defaultIconPack: 'fas'});
+Vue.use(Buefy, { defaultIconPack: 'fas' });
 
-import VeeValidate, {Validator} from 'vee-validate';
+import VeeValidate, { Validator } from 'vee-validate';
 Validator.extend('positive', value => Number(value) > 0);
 Vue.use(VeeValidate, {
   i18nRootKey: 'validations',
@@ -43,7 +46,7 @@ Vue.use(VTooltip);
 
 import VueMoment from 'vue-moment';
 const moment = require('moment');
-Vue.use(VueMoment, {moment});
+Vue.use(VueMoment, { moment });
 
 import VueShortKey from 'vue-shortkey';
 Vue.use(VueShortKey, {
