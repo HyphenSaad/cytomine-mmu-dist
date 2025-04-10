@@ -100,15 +100,15 @@ export default {
         let { authenticated, shortTermToken } = await Cytomine.instance.ping(
           this.project ? this.project.id : null
         );
+
         this.$store.commit("currentUser/setShortTermToken", shortTermToken);
 
         if (this.currentUser && !authenticated) {
-          // Session expired or user was logged out
-          console.log("Session expired or user logged out from another tab");
           await this.$store.dispatch("logout");
-          // Force reload to clear any lingering cookie state and return to login page
-          window.location.href = "/";
-          return;
+          // Redirect to login page if not already there
+          if (this.$route.path !== "/") {
+            this.$router.push("/");
+          }
         }
         if (!this.currentUser && authenticated) {
           await this.fetchUser();
@@ -118,11 +118,12 @@ export default {
         console.log(error);
         if (error.toString().indexOf("401") !== -1) {
           this.communicationError = false;
-          await this.$store.dispatch("logout");
           Cytomine.instance.logout();
-          // Force page reload to clear cookies and return to login page
-          window.location.href = "/";
-          return;
+          await this.$store.dispatch("logout");
+          // Redirect to login page
+          if (this.$route.path !== "/") {
+            this.$router.push("/");
+          }
         } else {
           this.communicationError = true;
         }

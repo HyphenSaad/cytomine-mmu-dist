@@ -27,17 +27,11 @@ Vue.use(Vuex);
 let store = new Vuex.Store({
   actions: {
     logout({ state, commit }) {
-      // Clear shortTermToken first
-      commit('currentUser/setShortTermToken', null);
-
-      // Reset all state modules
       commit('currentUser/resetState');
       commit('currentProject/resetState');
       commit('ontologies/resetState');
       commit('listProjects/resetState');
       commit('listSoftware/resetState');
-
-      // Unregister project modules
       for (let key in state.projects) {
         this.unregisterModule(['projects', key]);
       }

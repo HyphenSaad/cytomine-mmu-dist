@@ -259,19 +259,19 @@ export default {
 
     async logout() {
       try {
-        // Call server-side logout to invalidate the session and clear cookies
         await Cytomine.instance.logout();
+        // Clear cookies
+        document.cookie.split(";").forEach((cookie) => {
+          const eqPos = cookie.indexOf("=");
+          const name =
+            eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+          document.cookie =
+            name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+        });
 
-        // Clear all Vuex state
         await this.$store.dispatch("logout");
-
-        // Explicitly clear shortTermToken from state
-        this.$store.commit("currentUser/setShortTermToken", null);
-
         this.changeLanguage();
-
-        // Force a page reload to ensure all cookies are cleared
-        window.location.href = "/";
+        this.$router.push("/");
       } catch (error) {
         console.log(error);
         this.$notify({ type: "error", text: this.$t("notif-error-logout") });
