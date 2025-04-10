@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.-->
+
 
 <template>
 <cytomine-modal :active="active" :title="$t('add-images')" @close="$emit('update:active', false)">
@@ -30,7 +31,7 @@
       >
         <template #default="{row: image}">
           <b-table-column :label="$t('overview')">
-            <image-thumbnail :image="image" :size="128" :key="`${image.id}-thumb-128`" :extra-parameters="{Authorization: 'Bearer ' + shortTermToken }"/>
+            <img :src="image.previewURL(256)" class="image-overview">
           </b-table-column>
 
           <b-table-column field="originalFilename" :label="$t('name')" sortable>
@@ -70,7 +71,6 @@ import {get} from '@/utils/store-helpers';
 import {AbstractImageCollection, ImageInstance} from 'cytomine-client';
 import CytomineModal from '@/components/utils/CytomineModal';
 import CytomineTable from '@/components/utils/CytomineTable';
-import ImageThumbnail from '@/components/image/ImageThumbnail';
 
 export default {
   name: 'add-image-modal',
@@ -78,7 +78,6 @@ export default {
     active: Boolean,
   },
   components: {
-    ImageThumbnail,
     CytomineTable,
     CytomineModal
   },
@@ -95,7 +94,6 @@ export default {
   },
   computed: {
     project: get('currentProject/project'),
-    shortTermToken: get('currentUser/shortTermToken'),
     imageCollection() {
       let collection = new AbstractImageCollection({
         project: this.project.id,
@@ -164,7 +162,7 @@ export default {
   height: 80vh;
 }
 
->>> .image-thumbnail {
+.image-overview {
   max-height: 4rem;
   max-width: 10rem;
 }

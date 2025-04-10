@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.-->
 
+
 <template>
 <li :key="action.id">
   <strong>{{Number(action.created) | moment('l LTS')}}:</strong>
@@ -23,18 +24,13 @@
   </span>
   <div v-if="previewUrl" class="preview" :class="{visible: showPreview}">
     <div class="box">
-      <img :src="appendShortTermToken(previewUrl, shortTermToken)" />
+      <img :src="previewUrl" />
     </div>
   </div>
 </li>
 </template>
 
 <script>
-
-
-import {appendShortTermToken} from '@/utils/token-utils.js';
-import {get} from '@/utils/store-helpers.js';
-
 const ANNOT = 1;
 const IMAGE = 2;
 const PROJECT = 3;
@@ -52,11 +48,9 @@ export default {
     };
   },
   computed: {
-    shortTermToken: get('currentUser/shortTermToken'),
     actionData() {
       return JSON.parse(this.action.data);
     },
-    // eslint-disable-next-line vue/return-in-computed-property
     type() {
       switch(this.action.serviceName) {
         case 'userAnnotationService':
@@ -67,13 +61,10 @@ export default {
           return IMAGE;
         case 'projectService':
           return PROJECT;
-        default:
-          return null;
       }
     }
   },
   methods: {
-    appendShortTermToken,
     enter() {
       this.showPreview = true;
     },

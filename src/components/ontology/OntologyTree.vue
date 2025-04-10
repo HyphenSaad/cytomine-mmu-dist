@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.-->
+
 
 <template>
 <div class="ontology-tree" :class="{selector: allowSelection, draggable: allowDrag, editable: allowEdition}">
@@ -85,8 +86,7 @@ export default {
     multipleSelection: {type: Boolean, default: true},
     allowDrag: {type: Boolean, default: false},
     allowEdition: {type: Boolean, default: false},
-    allowNew: {type: Boolean, default: false},
-    hiddenNodes: {type: Array, default: () => []}
+    allowNew: {type: Boolean, default: false}
   },
   components: {
     SlVueTree,
@@ -120,14 +120,16 @@ export default {
     },
     regexp() {
       this.filter();
-    },
-    hiddenNodes() {
-      this.filter();
     }
   },
   methods: {
     makeTree() {
-      let nodes = (this.ontology) ? this.createSubTree(this.ontology.children.array.slice()) : [];
+      if(!this.ontology) {
+        this.treeNodes = [];
+        return;
+      }
+
+      let nodes = this.createSubTree(this.ontology.children.array.slice());
       let additionalNodes = this.createSubTree(this.additionalNodes.slice());
       this.treeNodes = this.startWithAdditionalNodes ? additionalNodes.concat(nodes) : nodes.concat(additionalNodes);
 
@@ -150,7 +152,7 @@ export default {
           name: term.name,
           color: term.color,
           parent: term.parent,
-          ontology: (this.ontology) ? this.ontology.id : null,
+          ontology: this.ontology.id,
           hidden: false
         },
         children: term.children && term.children.length > 0 ? this.createSubTree(term.children) : []
@@ -159,7 +161,7 @@ export default {
 
     filter() {
       this.applyToAllNodes(node => {
-        let match = this.regexp.test(node.title) && !this.hiddenNodes.includes(node.data.id);
+        let match = this.regexp.test(node.title);
         if(node.children) {
           let matchInChildren = node.children.some(child => !child.data.hidden); // OK because applyToAllNodes performs bottom-up operations
           node.isExpanded = matchInChildren;

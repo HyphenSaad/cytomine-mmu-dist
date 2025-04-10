@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.-->
+
 
 <template>
 <div class="map-container" @click="isActiveImage = true" ref="container">
@@ -30,7 +31,7 @@
         :zoom.sync="zoom"
         :rotation.sync="rotation"
         :max-zoom="maxZoom"
-        :max-resolution="Math.pow(2, image.zoom)"
+        :max-resolution="Math.pow(2, image.depth)"
         :extent="extent"
         :projection="projectionName"
         @mounted="viewMounted()"
@@ -43,22 +44,20 @@
           :urls="baseLayerURLs"
           :size="imageSize"
           :extent="extent"
-          :crossOrigin="slices[0].imageServerUrl"
+          crossOrigin="Anonymous"
           ref="baseSource"
           @mounted="setBaseSource()"
-          :transition="0"
-          :tile-size="tileSize"
         />
       </vl-layer-tile>
 
-<!--      <vl-layer-image>-->
-<!--        <vl-source-raster-->
-<!--          v-if="baseSource && colorManipulationOn"-->
-<!--          :sources="[baseSource]"-->
-<!--          :operation="operation"-->
-<!--          :lib="lib"-->
-<!--        />-->
-<!--      </vl-layer-image>-->
+      <vl-layer-image>
+        <vl-source-raster
+          v-if="baseSource && colorManipulationOn"
+          :sources="[baseSource]"
+          :operation="operation"
+          :lib="lib"
+        />
+      </vl-layer-image>
 
       <annotation-layer
         v-for="layer in selectedLayers"
@@ -74,7 +73,7 @@
     </vl-map>
 
     <div v-if="configUI['project-tools-main']" class="draw-tools">
-      <draw-tools :index="index" @screenshot="takeScreenshot()"/>
+      <draw-tools :index="index" />
     </div>
 
     <div class="panels">
@@ -87,27 +86,17 @@
 
         <template v-if="isPanelDisplayed('hide-tools')">
           <li v-if="isPanelDisplayed('info')">
-            <a @click="togglePanel('info')" :class="{active: ['info', 'metadata'].includes(activePanel)}">
+            <a @click="togglePanel('info')" :class="{active: activePanel === 'info'}">
               <i class="fas fa-info"></i>
             </a>
-            <information-panel
-              class="panel-options"
-              v-show="activePanel === 'info'"
-              :index="index"
-              @openMetadata="togglePanel('metadata')"
-            />
-            <div v-show="activePanel === 'metadata'">
-              <metadata-panel class="panel-metadata" :index="index" />
-            </div>
+            <information-panel class="panel-options" v-show="activePanel === 'info'" :index="index" />
           </li>
 
           <li v-if="isPanelDisplayed('digital-zoom')">
             <a @click="togglePanel('digital-zoom')" :class="{active: activePanel === 'digital-zoom'}">
               <i class="fas fa-search"></i>
             </a>
-            <digital-zoom class="panel-options" v-show="activePanel === 'digital-zoom'" :index="index"
-                          @resetZoom="$refs.view.animate({zoom: image.zoom})"
-                          @fitZoom="fitZoom" />
+            <digital-zoom class="panel-options" v-show="activePanel === 'digital-zoom'" :index="index" />
           </li>
 
           <li v-if="isPanelDisplayed('link') && nbImages > 1">
@@ -151,7 +140,7 @@
             <a @click="togglePanel('follow')" :class="{active: activePanel === 'follow'}">
               <i class="fas fa-street-view"></i>
             </a>
-            <follow-panel class="panel-options" v-show="activePanel === 'follow'" :index="index" :view="$refs.view"/>
+            <follow-panel class="panel-options" v-show="activePanel === 'follow'" :index="index" :view="$refs.view" />
           </li>
 
           <li v-if="isPanelDisplayed('review') && canEdit">
@@ -164,8 +153,6 @@
       </ul>
     </div>
 
-    <image-controls :index="index" class="image-controls-wrapper" />
-
     <div class="broadcast" v-if="imageWrapper.tracking.broadcast">
       <i class="fas fa-circle"></i> {{$t('live')}}
     </div>
@@ -174,7 +161,7 @@
 
     <scale-line :image="image" :zoom="zoom" :mousePosition="projectedMousePosition" />
 
-    <annotations-container :index="index" @centerView="centerViewOnAnnot" />
+    <annotation-details-container v-if="isPanelDisplayed('annotation-main')" :index="index" :view="$refs.view" />
 
     <div class="custom-overview" ref="overview">
       <p class="image-name" :class="{hidden: overviewCollapsed}">
@@ -194,11 +181,8 @@ import AnnotationLayer from './AnnotationLayer';
 import RotationSelector from './RotationSelector';
 import ScaleLine from './ScaleLine';
 import DrawTools from './DrawTools';
-import ImageControls from './ImageControls';
-import AnnotationsContainer from './AnnotationsContainer';
 
 import InformationPanel from './panels/InformationPanel';
-import MetadataPanel from './panels/MetadataPanel.vue';
 import DigitalZoom from './panels/DigitalZoom';
 import ColorManipulation from './panels/ColorManipulation';
 import LinkPanel from './panels/LinkPanel';
@@ -207,6 +191,8 @@ import OntologyPanel from './panels/OntologyPanel';
 import PropertiesPanel from './panels/PropertiesPanel';
 import FollowPanel from './panels/FollowPanel';
 import ReviewPanel from './panels/ReviewPanel';
+
+import AnnotationDetailsContainer from './AnnotationDetailsContainer';
 
 import SelectInteraction from './interactions/SelectInteraction';
 import DrawInteraction from './interactions/DrawInteraction';
@@ -220,7 +206,7 @@ import {KeyboardPan, KeyboardZoom} from 'ol/interaction';
 import {noModifierKeys, targetNotEditable} from 'ol/events/condition';
 import WKT from 'ol/format/WKT';
 
-import {ImageConsultation, Annotation, AnnotationType, UserPosition, SliceInstance} from 'cytomine-client';
+import {ImageConsultation, Annotation, AnnotationType, UserPosition} from 'cytomine-client';
 
 import {constLib, operation} from '@/utils/color-manipulation.js';
 
@@ -239,11 +225,10 @@ export default {
     RotationSelector,
     ScaleLine,
     DrawTools,
-    ImageControls,
-    AnnotationsContainer,
+
+    AnnotationDetailsContainer,
 
     InformationPanel,
-    MetadataPanel,
     DigitalZoom,
     ColorManipulation,
     LinkPanel,
@@ -265,15 +250,12 @@ export default {
 
       baseSource: null,
       routedAnnotation: null,
-      selectedAnnotation: null,
 
       timeoutSavePosition: null,
 
       loading: true,
 
-      overview: null,
-
-      format: new WKT(),
+      overview: null
     };
   },
   computed: {
@@ -301,12 +283,6 @@ export default {
     },
     image() {
       return this.imageWrapper.imageInstance;
-    },
-    slices() {
-      return this.imageWrapper.activeSlices;
-    },
-    sliceIds() {
-      return this.slices.map(slice => slice.id);
     },
     canEdit() {
       return this.$store.getters['currentProject/canEditImage'](this.image);
@@ -383,52 +359,34 @@ export default {
     imageSize() {
       return [this.image.width, this.image.height];
     },
-    tileSize() {
-      return this.image.tileSize;
+
+    baseLayerURLs() {
+      let filterPrefix = this.imageWrapper.colors.filter || '';
+      let params = `&tileGroup={TileGroup}&x={x}&y={y}&z={z}&channels=0&layer=0&timeframe=0&mimeType=${this.image.mime}`;
+      return this.image.imageServerURLs.map(url => filterPrefix + url + params);
     },
-    baseLayerProcessingParams() {
-      return this.$store.getters[this.imageModule + 'tileRequestParams'];
+
+    colorManipulationOn() {
+      return this.imageWrapper.colors.brightness !== 0 || this.imageWrapper.colors.contrast !== 0
+                || this.imageWrapper.colors.hue !== 0 || this.imageWrapper.colors.saturation !== 0;
     },
-    baseLayerSliceParams() {
+    operation() {
+      return operation;
+    },
+    lib() {
       return {
-        // eslint-disable-next-line camelcase
-        z_slices: this.slices[0].zStack,
-        timepoints: this.slices[0].time
+        ...constLib,
+        brightness: this.imageWrapper.colors.brightness,
+        contrast: this.imageWrapper.colors.contrast,
+        saturation: this.imageWrapper.colors.saturation,
+        hue: this.imageWrapper.colors.hue
       };
     },
-    baseLayerURLQuery() {
-      let query = new URLSearchParams({...this.baseLayerSliceParams, ...this.baseLayerProcessingParams}).toString();
-      if (query.length > 0) {
-        return `?${query}`;
-      }
-      return query;
-    },
-    baseLayerURLs() {
-      let slice = this.slices[0];
-      return  [`${slice.imageServerUrl}/image/${slice.path}/normalized-tile/zoom/{z}/ti/{tileIndex}.jpg${this.baseLayerURLQuery}`];
-    },
-    // colorManipulationOn() {
-    //   return this.imageWrapper.colors.brightness !== 0
-    //             || this.imageWrapper.colors.hue !== 0 || this.imageWrapper.colors.saturation !== 0;
-    // },
-    // operation() {
-    //   return operation;
-    // },
-    // lib() {
-    //   return {
-    //     ...constLib,
-    //     brightness: this.imageWrapper.colors.brightness,
-    //     contrast: this.imageWrapper.colors.contrast,
-    //     saturation: this.imageWrapper.colors.saturation,
-    //     hue: this.imageWrapper.colors.hue
-    //   };
-    // },
 
     layersToPreload() {
       let layers = [];
-      let annot = this.selectedAnnotation || this.routedAnnotation;
-      if(annot) {
-        layers.push(annot.type === AnnotationType.REVIEWED ? -1 : annot.user);
+      if(this.routedAnnotation) {
+        layers.push(this.routedAnnotation.type === AnnotationType.REVIEWED ? -1 : this.routedAnnotation.user);
       }
       if(this.routedAction === 'review' && !layers.includes(-1)) {
         layers.push(-1);
@@ -451,19 +409,6 @@ export default {
     },
     activeModifyInteraction() {
       return this.activeSelectInteraction && this.activeEditTool && !this.correction;
-    },
-    idealZoom() {
-      let container = this.$refs.container;
-      let idealZoom = this.maxZoom;
-      let factor = this.maxZoom - this.image.zoom;
-      let mapWidth = this.image.width * Math.pow(2, factor);
-      let mapHeight = this.image.height * Math.pow(2, factor);
-      while(mapWidth > container.clientWidth || mapHeight > container.clientHeight) {
-        mapWidth /= 2;
-        mapHeight /= 2;
-        idealZoom --;
-      }
-      return idealZoom;
     }
   },
   watch: {
@@ -479,7 +424,17 @@ export default {
       if(this.zoom !== null) {
         return; // not the first time the viewer is opened => zoom was already initialized
       }
-      this.zoom = this.idealZoom;
+
+      let container = this.$refs.container;
+      let mapWidth = this.image.width;
+      let mapHeight = this.image.height;
+      let idealZoom = this.image.depth;
+      while(mapWidth > container.clientWidth || mapHeight > container.clientHeight) {
+        mapWidth /= 2;
+        mapHeight /= 2;
+        idealZoom --;
+      }
+      this.zoom = idealZoom;
     },
 
     async updateMapSize() {
@@ -506,9 +461,18 @@ export default {
 
     async viewMounted() {
       await this.$refs.view.$createPromise; // wait for ol.View to be created
-      if(this.routedAnnotation) {
-        this.centerViewOnAnnot(this.routedAnnotation, 500);
+
+      if(this.routedAnnotation) { // center view on annotation
+        let annot = this.routedAnnotation;
+        let geometry = new WKT().readGeometry(annot.location);
+        this.$refs.view.fit(geometry, {padding: [10, 10, 10, 10], maxZoom: this.image.depth});
+
+        // HACK: center set by view.fit() is incorrect => reset it manually
+        this.center = (geometry.getType() === 'Point') ? geometry.getFirstCoordinate()
+          : [annot.centroid.x, annot.centroid.y];
+        // ---
       }
+
       this.savePosition();
     },
 
@@ -525,8 +489,6 @@ export default {
       await this.$refs.map.$createPromise; // wait for ol.Map to be created
       await this.$refs.baseLayer.$createPromise; // wait for ol.Layer to be created
 
-      let map = this.$refs.map.$map;
-
       this.overview = new OverviewMap({
         view: new View({projection: this.projectionName}),
         layers: [this.$refs.baseLayer.$layer],
@@ -534,12 +496,7 @@ export default {
         target: this.$refs.overview,
         collapsed: this.imageWrapper.view.overviewCollapsed
       });
-      map.addControl(this.overview);
-
-      this.overview.getOverviewMap().on(('click'), (evt) => {
-        let size = map.getSize();
-        map.getView().centerOn(evt.coordinate, size, [size[0]/2, size[1]/2]);
-      });
+      this.$refs.map.$map.addControl(this.overview);
     },
 
     toggleOverview() {
@@ -555,10 +512,10 @@ export default {
     savePosition: _.debounce(async function() {
       if(this.$refs.view) {
         let extent = this.$refs.view.$view.calculateExtent(); // [minX, minY, maxX, maxY]
+
         try {
           await UserPosition.create({
             image: this.image.id,
-            slice: this.slices[0].id,
             zoom: this.zoom,
             rotation: this.rotation,
             bottomLeftX: Math.round(extent[0]),
@@ -582,76 +539,14 @@ export default {
       }
     }, 500),
 
-    fitZoom() {
-      this.$refs.view.animate({
-        zoom: this.idealZoom,
-        center: [this.image.width/2, this.image.height/2]
-      });
-    },
-
-    async centerViewOnAnnot(annot, duration) {
-      if (annot.image === this.image.id) {
-        if (!annot.location) {
-          //in case annotation location has not been loaded
-          annot = await Annotation.fetch(annot.id);
-        }
-
-        let geometry = this.format.readGeometry(annot.location);
-        this.$refs.view.fit(geometry, {duration, padding: [10, 10, 10, 10], maxZoom: this.image.zoom});
-
-        // HACK: center set by view.fit() is incorrect => reset it manually
-        this.center = (geometry.getType() === 'Point') ? geometry.getFirstCoordinate()
-          : [annot.centroid.x, annot.centroid.y];
-        // ---
-      }
-    },
-
-    async selectAnnotationHandler({index, annot, center=false, showComments=false}) {
-      if (this.index === index && annot.image === this.image.id) {
-        try {
-          let sliceChange = false;
-          if (!annot.slice) {
-            //in case annotation slice has not been loaded
-            annot = await Annotation.fetch(annot.id);
-          }
-
-          if(annot.slice !== this.slices[0].id) {
-            let slice = await SliceInstance.fetch(annot.slice);
-            await this.$store.dispatch(this.imageModule + 'setActiveSlice', slice);
-            this.$eventBus.$emit('reloadAnnotations', {idImage: this.image.id, hard: true});
-            sliceChange = true;
-          }
-
-          if (showComments) {
-            this.$store.commit(this.imageModule + 'setShowComments', annot);
-          }
-
-          this.selectedAnnotation = annot; // used to pre-load annot layer
-          this.$store.commit(this.imageModule + 'setAnnotToSelect', annot);
-          this.$eventBus.$emit('selectAnnotationInLayer', {index, annot});
-
-          if (center) {
-            await this.viewMounted();
-            let duration = (sliceChange) ? undefined : 500;
-            this.centerViewOnAnnot(annot, duration);
-          }
-        }
-        catch(error) {
-          console.log(error);
-          this.$notify({type: 'error', text: this.$t('notif-error-target-annotation')});
-        }
-      }
-    },
-
     isPanelDisplayed(panel) {
       return this.configUI[`project-explore-${panel}`];
     },
     shortkeyHandler(key) {
-      if(!key.startsWith('toggle-all-') && !this.isActiveImage) { // shortkey should only be applied to active map
+      if(!this.isActiveImage) { // shortkey should only be applied to active map
         return;
       }
 
-      key = key.replace('toggle-all-', 'toggle-');
       switch(key) {
         case 'toggle-information':
           if (this.isPanelDisplayed('info')){
@@ -704,22 +599,7 @@ export default {
           }
           return;
       }
-    },
-    async takeScreenshot() {
-      // Use of css percent values and html2canvas results in strange behavior
-      // Set image container as actual height in pixel (not in percent) to avoid image distortion when retrieving canvas
-      let containerHeight = document.querySelector('.map-container').clientHeight;
-      document.querySelector('.map-container').style.height = containerHeight+'px';
-
-      let a = document.createElement('a');
-      a.href = await this.$html2canvas(document.querySelector('.ol-unselectable'), {type: 'dataURL'});
-      let imageName = 'image_' + this.image.id.toString() + '_project_' + this.image.project.toString() + '.png';
-      a.download = imageName;
-      a.click();
-
-      // Reset container css values as previous
-      document.querySelector('.map-container').style.height = '';
-    },
+    }
   },
   async created() {
     if(!getProj(this.projectionName)) { // if image opened for the first time
@@ -748,35 +628,17 @@ export default {
       this.$store.commit(this.imageModule + 'removeLayerFromSelectedFeatures', {layer, cache: true});
     });
 
-    let annot = this.imageWrapper.routedAnnotation;
-    if (!annot) {
-      let idRoutedAnnot = this.$route.params.idAnnotation;
-      if (idRoutedAnnot) {
-        try {
-          annot = await Annotation.fetch(idRoutedAnnot);
-        }
-        catch (error) {
-          console.log(error);
-          this.$notify({type: 'error', text: this.$t('notif-error-target-annotation')});
-        }
-      }
-    }
-
-    if (annot) {
+    let idRoutedAnnot = this.$route.params.idAnnotation;
+    if(idRoutedAnnot) {
       try {
+        let annot = await Annotation.fetch(idRoutedAnnot);
         if(annot.image === this.image.id) {
-          if(!this.sliceIds.includes(annot.slice)) {
-            let slice = await SliceInstance.fetch(annot.slice);
-            await this.$store.dispatch(this.imageModule + 'setActiveSlice', slice);
-          }
           this.routedAnnotation = annot;
           if(this.routedAction === 'comments') {
             this.$store.commit(this.imageModule + 'setShowComments', annot);
           }
           this.$store.commit(this.imageModule + 'setAnnotToSelect', annot);
         }
-
-        this.$store.commit(this.imageModule + 'clearRoutedAnnotation');
       }
       catch(error) {
         console.log(error);
@@ -797,15 +659,11 @@ export default {
   mounted() {
     this.$eventBus.$on('updateMapSize', this.updateMapSize);
     this.$eventBus.$on('shortkeyEvent', this.shortkeyHandler);
-    this.$eventBus.$on('selectAnnotation', this.selectAnnotationHandler);
-    this.$eventBus.$on('closeMetadata', () => this.$store.commit(this.imageModule + 'togglePanel', 'info'));
     this.setInitialZoom();
   },
   beforeDestroy() {
     this.$eventBus.$off('updateMapSize', this.updateMapSize);
     this.$eventBus.$off('shortkeyEvent', this.shortkeyHandler);
-    this.$eventBus.$off('selectAnnotation', this.selectAnnotationHandler);
-    this.$eventBus.$off('closeMetadata');
     clearTimeout(this.timeoutSavePosition);
   }
 };
@@ -838,7 +696,7 @@ $colorOpenedPanelLink: #6c95c8;
   top: 0.7em;
   left: 3.5rem;
   right: $widthPanelBar;
-  z-index: 30;
+  z-index: 10;
 }
 
 .broadcast {
@@ -924,40 +782,26 @@ $colorOpenedPanelLink: #6c95c8;
   }
 }
 
-.panels li:nth-child(-n+8) .panel-options {
+.panels li:nth-child(-n+7) .panel-options {
   bottom: -7.5em;
   min-height: 13em;
 }
 
-.panels li:nth-child(-n+4) .panel-options {
+.panels li:nth-child(-n+3) .panel-options {
   top: -1.75em;
   bottom: auto;
   min-height: 7.5em;
 }
 
-.panels li:nth-child(5) .panel-options {
+.panels li:nth-child(4) .panel-options {
   top: -5.5em;
   bottom: auto;
-}
-
-/* ----- Metadata panel ---- */
-
-.panel-metadata {
-  position: absolute;
-  top: -1.5em;
-  right: $widthPanelBar;
-  min-width: 30em;
-  min-height: 30em;
-  background: $backgroundPanel;
-  padding: 0.75em;
-  border-radius: 5px 0 0 5px;
 }
 
 /* ----- CUSTOM STYLE FOR OL CONTROLS ----- */
 
 .ol-zoom, .ol-rotate {
   background: none !important;
-  z-index: 20;
 }
 
 .ol-rotate:not(.custom) {
@@ -985,7 +829,6 @@ $colorOpenedPanelLink: #6c95c8;
   position: absolute;
   left: .5em;
   top: 5rem;
-  z-index: 20;
 }
 
 .custom-overview {
@@ -1016,24 +859,5 @@ $colorOpenedPanelLink: #6c95c8;
       display: none;
     }
   }
-}
-
-/* ----- Image controls ----- */
-.image-controls-wrapper {
-  position: absolute;
-  bottom: 1.5rem;
-  left: 20%;
-  right: calc(#{$widthPanelBar} + 20%);
-  z-index: 5;
-}
-
-/* ----- Annotation list ----- */
-.annotations-table-wrapper {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: $widthPanelBar;
-  z-index: 40;
-  pointer-events: none;
 }
 </style>

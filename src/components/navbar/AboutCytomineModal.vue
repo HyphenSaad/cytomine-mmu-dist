@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -12,9 +12,10 @@
  See the License for the specific language governing permissions and
  limitations under the License.-->
 
+
 <template>
 <cytomine-modal-card :title="$t('about-cytomine')" @close="$parent.close()">
-  <template>
+  <template v-if="!loading">
     <dl>
       <dt>{{$t('version')}}</dt>
       <dd>{{version || '?'}}</dd>
@@ -59,6 +60,7 @@
       <dd>
         <i18n path="documentation-info">
           <a place="docLink" href="https://documentation.cytomine.org/" target="_blank">{{$t('here')}}</a>
+          <a place="apiDocLink" :href="apiDocLink" target="_blank">{{$t('here')}}</a>
         </i18n>
       </dd>
 
@@ -74,6 +76,7 @@
 </template>
 
 <script>
+import {Cytomine} from 'cytomine-client';
 import constants from '@/utils/constants.js';
 import CytomineModalCard from '@/components/utils/CytomineModalCard';
 
@@ -82,9 +85,26 @@ export default {
   components: {CytomineModalCard},
   data() {
     return {
-      version: constants.CYTOMINE_COMMERCIAL_VERSION
+      version: null,
+      loading: true
     };
   },
+  computed: {
+    apiDocLink() {
+      let core = constants.CYTOMINE_CORE_HOST;
+      return `${core}/restApiDoc/?doc_url=${core}/restApiDoc/api`;
+    }
+  },
+  async created() {
+    try {
+      let {version} = await Cytomine.instance.ping();
+      this.version = version;
+    }
+    catch(error) {
+      console.log(error);
+    }
+    this.loading = false;
+  }
 };
 </script>
 

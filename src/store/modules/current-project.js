@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009-2022. Authors: see NOTICE file.
+* Copyright (c) 2009-2021. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -14,10 +14,7 @@
 * limitations under the License.
 */
 
-import Vue from 'vue';
-
 import {Cytomine, Project, ProjectConnection, Ontology, AnnotationType, UserCollection, ProjectMemberRole} from 'cytomine-client';
-
 import {fullName} from '@/utils/user-utils.js';
 import {getAllTerms} from '@/utils/ontology-utils';
 
@@ -28,8 +25,7 @@ function getDefaultState() {
     ontology: null,
     managers: [],
     members: [],
-    currentViewer: null,
-    currentMetadataSearch: {},
+    currentViewer: null
   };
 }
 
@@ -65,22 +61,6 @@ export default {
 
     setCurrentViewer(state, id) {
       state.currentViewer = id;
-    },
-
-    setImageFormat(state, format) {
-      state.currentMetadataSearch[format] = {};
-    },
-
-    setCurrentMetadataSearch(state, {format, key, searchValue}) {
-      state.currentMetadataSearch[format][key] = searchValue;
-    },
-
-    removeMetadataFilter(state, {format, key}) {
-      Vue.delete(state.currentMetadataSearch[format], key);
-    },
-
-    resetMetadataFilters(state) {
-      state.currentMetadataSearch = {};
     }
   },
 
@@ -136,12 +116,6 @@ export default {
       commit('setMembers', members);
     },
 
-    async fetchFollowers(_, {userId, imageId}) {
-      let followers = await UserCollection.fetchFollowers(userId, imageId);
-      //followers.forEach(follower => follower.fullName = fullName(follower));
-      return followers;
-    },
-
     async fetchOntology({state, commit}) {
       let ontology = state.project.ontology ? await Ontology.fetch(state.project.ontology) : null;
       commit('setOntology', ontology);
@@ -157,9 +131,6 @@ export default {
     },
 
     canEditAnnot: (_, getters, rootState) => annot => {
-      if (annot.type === AnnotationType.ALGO) {
-        return false;
-      }
       let currentUser = rootState.currentUser.user;
       let idLayer = annot.user;
       if(annot.type === AnnotationType.REVIEWED) {
@@ -194,10 +165,6 @@ export default {
 
     terms: (state) => {
       return state.ontology ? getAllTerms(state.ontology) : null;
-    },
-
-    currentMetadataSearch: (state) => {
-      return state.currentMetadataSearch;
     },
 
     currentProjectModule: (state) => {

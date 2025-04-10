@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.-->
+
 
 <template>
 <div class="admin-dashboard-wrapper">
@@ -74,11 +75,7 @@
             </tr>
             <tr>
               <td>{{totalCounts.images}}</td>
-              <td>{{$t('images-in-projects')}}</td>
-            </tr>
-            <tr>
-              <td>{{totalCounts.abstractImages}}</td>
-              <td>{{$t('uploaded-images')}}</td>
+              <td>{{$t('images')}}</td>
             </tr>
           </tbody>
         </table>
@@ -99,13 +96,11 @@
               <td>{{totalCounts.userAnnotations}}</td>
               <td>{{$t('user-annotations')}}</td>
             </tr>
-            <tr>
-            </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="column" v-show="algoEnabled">
+      <div class="column">
         <table class="table is-fullwidth">
           <tbody>
             <tr>
@@ -119,8 +114,6 @@
             <tr>
               <td>{{totalCounts.jobAnnotations}}</td>
               <td>{{$t('analysis-annotations')}}</td>
-            </tr>
-            <tr>
             </tr>
           </tbody>
         </table>
@@ -152,7 +145,6 @@
 </template>
 
 <script>
-import constants from '@/utils/constants.js';
 import {Cytomine} from 'cytomine-client';
 import LastConnectionsChart from '@/components/charts/LastConnectionsChart.js';
 import moment from 'moment';
@@ -167,7 +159,6 @@ export default {
       totalCounts: null,
       storageStats: null,
       chartOptions: [],
-      algoEnabled: constants.ALGORITHMS_ENABLED,
       selectedChartOption: null
     };
   },

@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.-->
+
 
 <template>
 <div class="panel">
@@ -65,11 +66,11 @@
     <div class="panel-block">
       <form @submit.prevent="login()">
         <b-field :label="$t('username')">
-          <b-input minlength="1" maxlength="50" v-model="username" />
+          <b-input v-model="username" />
         </b-field>
 
         <b-field :label="$t('password')">
-          <b-input type="password" password-reveal minlength="4" maxlength="100" v-model="password" />
+          <b-input type="password" v-model="password" />
         </b-field>
 
         <div class="columns">
@@ -80,7 +81,7 @@
           </div>
 
           <div class="column has-text-right">
-            <button :disabled="!loginEnabled" class="button is-link"> {{$t('button-login')}}</button>
+            <button class="button is-link"> {{$t('button-login')}}</button>
           </div>
         </div>
       </form>
@@ -121,10 +122,7 @@ export default {
     };
   },
   computed: {
-    currentUser: get('currentUser/user'),
-    loginEnabled() {
-      return !!this.username && !!this.password;
-    }
+    currentUser: get('currentUser/user')
   },
   methods: {
     async login() {
@@ -143,8 +141,8 @@ export default {
         }
       }
       catch(error) {
-        console.log(error.response);
-        this.$notify({type: 'error', text: error.response.data.errors.message});
+        console.log(error);
+        this.$notify({type: 'error', text: error.response.data.message});
       }
     },
     async sendUsername() {

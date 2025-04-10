@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.-->
+
 
 <template>
 <div>
@@ -64,15 +65,8 @@ export default {
     termsToAssociate() {
       return this.imageWrapper.draw.termsNewAnnots;
     },
-    tracksToAssociate() {
-      return this.imageWrapper.draw.tracksNewAnnots;
-    },
     image() {
       return this.imageWrapper.imageInstance;
-    },
-    slice() {
-      // Cannot draw on multiple slices at same time
-      return (this.imageWrapper.activeSlices) ? this.imageWrapper.activeSlices[0] : null;
     },
     activeTool() {
       return this.imageWrapper.draw.activeTool;
@@ -97,8 +91,6 @@ export default {
         case 'freehand-polygon':
         case 'select': // correct mode
           return 'Polygon';
-        default:
-          return ''; // Should not happen
       }
     },
     drawCorrection() {
@@ -179,10 +171,8 @@ export default {
         let annot = new Annotation({
           location: this.getWktLocation(drawnFeature),
           image: this.image.id,
-          slice: this.slice.id,
           user: layer.id,
-          term: this.termsToAssociate,
-          track: this.tracksToAssociate
+          term: this.termsToAssociate
         });
 
         try {
@@ -217,8 +207,6 @@ export default {
         });
         if(correctedAnnot) {
           correctedAnnot.userByTerm = annot.userByTerm; // copy terms from initial annot
-          correctedAnnot.track = annot.track;
-          correctedAnnot.annotationTrack = annot.annotationTrack;
           this.$store.commit(this.imageModule + 'addAction', {annot: correctedAnnot, type: Action.UPDATE});
           this.$eventBus.$emit('editAnnotation', correctedAnnot);
         }

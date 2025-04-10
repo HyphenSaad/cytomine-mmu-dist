@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.-->
+
 
 <template>
   <div>
@@ -25,18 +26,14 @@
           <td colspan="2">
             <strong>{{$t('terms')}}</strong>
             <b-message type="is-info" has-icon icon-size="is-small">
-            {{$t('hierarchical-drag-drop-term')}}
-          </b-message>
-          <ontology-tree :ontology="fullOntology" :allowSelection="false" :allowDrag="canEdit" :allowEdition="canEdit">
+              {{$t('hierarchical-drag-drop-term')}}
+            </b-message>
+            <ontology-tree :ontology="fullOntology" :allowSelection="false" :allowDrag="canEdit" :allowEdition="canEdit">
               <template #no-result>
                 <em class="has-text-grey">{{$t('no-term')}}</em>
               </template>
             </ontology-tree>
           </td>
-        </tr>
-        <tr v-if="currentUser.isDeveloper">
-          <td><strong>{{$t('id')}}</strong></td>
-          <td>{{ontology.id}}</td>
         </tr>
         <tr>
           <td><strong>{{$t('projects')}}</strong></td>

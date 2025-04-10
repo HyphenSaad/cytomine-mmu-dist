@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.-->
+
 
 <template>
 <div class="box error" v-if="!configUI['project-configuration-tab']">
@@ -31,7 +32,7 @@
       {{$t('custom-ui')}}
     </b-radio-button>
 
-    <b-radio-button v-show="algoEnabled" v-model="activeTab" native-value="algorithms" type="is-link">
+    <b-radio-button v-model="activeTab" native-value="algorithms" type="is-link">
       {{$t('algorithms')}}
     </b-radio-button>
 
@@ -49,7 +50,6 @@
 </template>
 
 <script>
-import constants from '@/utils/constants.js';
 import {get} from '@/utils/store-helpers';
 
 import GeneralConfiguration from './configuration-panels/GeneralConfiguration';
@@ -64,7 +64,6 @@ export default {
   name: 'project-configuration',
   data() {
     return {
-      algoEnabled: constants.ALGORITHMS_ENABLED,
       activeTab: defaultTab
     };
   },
@@ -73,7 +72,6 @@ export default {
     queriedTab() {
       return this.$route.query.tab;
     },
-    // eslint-disable-next-line vue/return-in-computed-property
     activeComponent() {
       switch(this.activeTab) {
         case 'general':
@@ -87,7 +85,6 @@ export default {
         case 'imageFilters':
           return ProjectImageFilters;
       }
-      throw new Error('Cannot load active tabs ' + this.activeTab);
     }
   },
   watch: {

@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.-->
+
 
 <template>
 <tr class="job-param-row-wrapper">
@@ -43,7 +44,7 @@
         <template #option="{option}">
           <div class="is-flex" v-if="areAnnotationObjects">
             <div class="thumb-wrapper">
-              <img class="thumb" :src="appendShortTermToken(option.smallCropURL + '&draw=true&complete=true&increaseArea=1.25',shortTermToken)">
+              <img class="thumb" :src="option.smallCropURL + '&draw=true&complete=true&increaseArea=1.25'">
             </div>
             <span class="option__title">
               {{ option[param.uriPrintAttribut] }}
@@ -51,7 +52,7 @@
           </div>
           <div class="is-flex" v-else-if="option.thumb">
             <div class="thumb-wrapper">
-              <img class="thumb" :src="appendShortTermToken(option.thumb, shortTermToken)">
+              <img class="thumb" :src="option.thumb">
             </div>
             <span class="option__title">
               {{ option[param.uriPrintAttribut] }}
@@ -83,7 +84,6 @@ import moment from 'moment';
 import {Cytomine, Description} from 'cytomine-client';
 import CytomineMultiselect from '@/components/form/CytomineMultiselect';
 import CytomineTerm from '@/components/ontology/CytomineTerm';
-import {appendShortTermToken} from '@/utils/token-utils.js';
 
 export default {
   name: 'job-parameter-row',
@@ -104,7 +104,6 @@ export default {
   computed: {
     project: get('currentProject/project'),
     ontology: get('currentProject/ontology'),
-    shortTermToken: get('currentUser/shortTermToken'),
     processedUri() {
       if(this.param.uri_) {
         let result = this.param.uri_.replace(new RegExp('^' + Cytomine.instance.basePath), '');
@@ -115,7 +114,6 @@ export default {
         result = result.replace('$currentOntology$', this.ontology ? this.ontology.id : null);
         return result;
       }
-      return null;
     },
     validationName() {
       return String(this.param.id);
@@ -130,7 +128,6 @@ export default {
       if (this.options && this.options.length > 0) {
         return this.options[0].class;
       }
-      return null;
     },
     areAnnotationObjects() {
       if(this.objectsClass) {
@@ -140,7 +137,6 @@ export default {
           'be.cytomine.ontology.ReviewedAnnotation'
         ].includes(this.objectsClass);
       }
-      return null;
     },
     areTermObjects() {
       return this.objectsClass === 'be.cytomine.ontology.Term';
@@ -160,7 +156,6 @@ export default {
     }
   },
   methods: {
-    appendShortTermToken,
     getInitialValue() {
       if(this.param.defaultParamValue) {
         if(this.param.type === 'Boolean') {

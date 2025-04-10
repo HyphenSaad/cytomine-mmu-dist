@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -12,31 +12,28 @@
  See the License for the specific language governing permissions and
  limitations under the License.-->
 
+
 <template>
 <div class="image-details-wrapper">
   <table class="table">
     <tbody>
       <tr v-if="isPropDisplayed('overview')">
         <td class="prop-label">{{$t('overview')}}</td>
-        <td class="prop-content" colspan="3">
+        <td class="prop-content">
           <router-link :to="`/project/${image.project}/image/${image.id}`">
-            <image-thumbnail :image="image" :size="256" :key="`${image.id}-thumb-256`" :extra-parameters="{Authorization: 'Bearer ' + shortTermToken }"/>
+            <img :src="image.thumb" class="image-overview">
           </router-link>
         </td>
       </tr>
-      <tr v-if="isPropDisplayed('id') && currentUser.isDeveloper">
-        <td class="prop-label">{{$t('id')}}</td>
-        <td class="prop-content" colspan="3">{{image.id}}</td>
-      </tr>
       <tr v-if="isPropDisplayed('status')">
         <td class="prop-label">{{$t('status')}}</td>
-        <td class="prop-content" colspan="3">
+        <td class="prop-content">
           <image-status :image="image" />
         </td>
       </tr>
       <tr v-if="isPropDisplayed('numberOfAnnotations')">
         <td class="prop-label">{{$t('user-annotations')}}</td>
-        <td class="prop-content" colspan="3">
+        <td class="prop-content">
           <router-link :to="`/project/${image.project}/annotations?image=${image.id}&type=user`">
             {{ image.numberOfAnnotations }}
           </router-link>
@@ -44,7 +41,7 @@
       </tr>
       <tr v-if="isPropDisplayed('numberOfJobAnnotations')">
         <td class="prop-label">{{$t('analysis-annotations')}}</td>
-        <td class="prop-content" colspan="3">
+        <td class="prop-content">
           <router-link :to="`/project/${image.project}/annotations?image=${image.id}&type=algo`">
             {{ image.numberOfJobAnnotations }}
           </router-link>
@@ -52,7 +49,7 @@
       </tr>
       <tr v-if="isPropDisplayed('numberOfReviewedAnnotations')">
         <td class="prop-label">{{$t('reviewed-annotations')}}</td>
-        <td class="prop-content" colspan="3">
+        <td class="prop-content">
           <router-link :to="`/project/${image.project}/annotations?image=${image.id}&type=reviewed`">
             {{ image.numberOfReviewedAnnotations }}
           </router-link>
@@ -60,40 +57,33 @@
       </tr>
       <tr v-if="isPropDisplayed('description')">
         <td class="prop-label">{{$t('description')}}</td>
-        <td class="prop-content" colspan="3">
+        <td class="prop-content">
           <cytomine-description :object="image" :canEdit="canEdit" />
         </td>
       </tr>
       <tr v-if="isPropDisplayed('tags')">
         <td class="prop-label">{{$t('tags')}}</td>
-        <td class="prop-content" colspan="3">
+        <td class="prop-content">
           <cytomine-tags :object="image" :canEdit="canEdit" />
         </td>
       </tr>
       <tr v-if="isPropDisplayed('properties')">
         <td class="prop-label">{{$t('properties')}}</td>
-        <td class="prop-content" colspan="3">
-          <cytomine-properties 
-            :object="image"
-            :error="loadPropertiesError"
-            :canEdit="canEdit"
-            :properties="metadataFilteredProperties"
-            @deleted="removeProp"
-            @added="addProp"
-          />
+        <td class="prop-content">
+          <cytomine-properties :object="image" :canEdit="canEdit" />
         </td>
       </tr>
       <tr v-if="isPropDisplayed('attached-files')">
         <td class="prop-label">{{$t('attached-files')}}</td>
-        <td class="prop-content" colspan="3">
+        <td class="prop-content">
           <attached-files :object="image" :canEdit="canEdit" />
         </td>
       </tr>
       <tr v-if="isPropDisplayed('slide-preview')">
         <td class="prop-label">{{$t('slide-preview')}}</td>
-        <td class="prop-content" colspan="3">
-          <a v-if="image.macroURL && !isBlindModeAndContributor" @click="isMetadataModalActive = true">
-            <image-thumbnail :image="image" :macro="true" :size="256" :key="`${image.id}-macro-256`" :extra-parameters="{Authorization: 'Bearer ' + shortTermToken }"/>
+        <td class="prop-content">
+          <a v-if="image.macroURL" @click="isMetadataModalActive = true">
+            <img :src="image.macroURL" class="image-overview">
           </a>
           <em v-else>
             {{$t('slide-preview-not-available')}}
@@ -102,118 +92,48 @@
       </tr>
       <tr v-if="isPropDisplayed('original-filename') && (!blindMode || canManageProject)">
         <td class="prop-label">{{$t('originalFilename')}}</td>
-        <td class="prop-content" colspan="3">
+        <td class="prop-content">
           {{image.originalFilename}}
         </td>
       </tr>
       <tr v-if="isPropDisplayed('format')">
         <td class="prop-label">{{$t('format')}}</td>
-        <td class="prop-content format" colspan="3">
-          {{image.contentType}}
+        <td class="prop-content format">
+          {{image.extension}}
         </td>
       </tr>
       <tr v-if="isPropDisplayed('vendor')">
         <td class="prop-label">{{$t('vendor')}}</td>
-        <td class="prop-content" colspan="3">
+        <td class="prop-content">
           <img v-if="vendor" :src="vendor.imgPath" :alt="vendor.name" :title="vendor.name" class="vendor-img">
           <template v-else>{{$t('unknown')}}</template>
         </td>
       </tr>
-      <tr v-if="isPropDisplayed('width') || isPropDisplayed('physicalSizeX')">
-        <template v-if="isPropDisplayed('width')">
-          <td class="prop-label">{{$t("image-width")}}</td>
-          <td class="prop-content-half" :colspan="isPropDisplayed('physicalSizeX') ? 1 : 3">
-            {{image.width}} {{$t("pixels")}}
-            <template v-if="image.physicalSizeX">({{(image.width * image.physicalSizeX).toFixed(3)}} {{$t("um")}})</template>
-          </td>
-        </template>
-        <template v-if="isPropDisplayed('physicalSizeX')">
-          <td class="prop-label">{{$t("x-y-resolution")}}</td>
-          <td class="prop-content-half" :colspan="isPropDisplayed('width') ? 1 : 3">
-            <template v-if="image.physicalSizeX">{{image.physicalSizeX.toFixed(3)}} {{$t("um-per-pixel")}}</template>
-            <template v-else>{{$t("unknown")}}</template>
-          </td>
-        </template>
-      </tr>
-      <tr v-if="isPropDisplayed('height') || isPropDisplayed('physicalSizeY')">
-        <template v-if="isPropDisplayed('height')">
-          <td class="prop-label">{{$t("image-height")}}</td>
-          <td class="prop-content-half" :colspan="isPropDisplayed('physicalSizeY') ? 1 : 3">
-            {{image.height}} {{$t("pixels")}}
-            <template v-if="image.physicalSizeY">({{(image.height * image.physicalSizeY).toFixed(3)}} {{$t("um")}})</template>
-          </td>
-        </template>
-        <template v-if="isPropDisplayed('physicalSizeY')">
-          <!-- We don't support diff X&Y yet in some components uncomment to bring back -->
-          <!-- <td class="prop-label">{{$t("y-resolution")}}</td> -->
-          <td class="prop-label"></td>
-          <td class="prop-content-half" :colspan="isPropDisplayed('height') ? 1 : 3">
-            <!-- <template v-if="image.physicalSizeY">{{image.physicalSizeY.toFixed(3)}} {{$t("um-per-pixel")}}</template>
-            <template v-else>{{$t("unknown")}}</template> -->
-          </td>
-        </template>
-      </tr>
-      <tr v-if="isPropDisplayed('depth') || isPropDisplayed('physicalSizeZ')">
-        <template v-if="isPropDisplayed('depth')">
-          <td class="prop-label">{{$t("image-depth")}}</td>
-          <td class="prop-content-half" :colspan="isPropDisplayed('physicalSizeZ') ? 1 : 3">
-            {{$tc("count-slices", image.depth, {count: image.depth})}}
-            <template v-if="image.physicalSizeZ">({{(image.depth * image.physicalSizeZ).toFixed(3)}} {{$t("um")}})</template>
-          </td>
-        </template>
-        <template v-if="isPropDisplayed('physicalSizeZ')">
-          <td class="prop-label">{{$t("z-resolution")}}</td>
-          <td class="prop-content-half" :colspan="isPropDisplayed('depth') ? 1 : 3">
-            <template v-if="image.physicalSizeZ">{{image.physicalSizeZ.toFixed(3)}} {{$t("um-per-slice")}}</template>
-            <template v-else-if="image.depth < 2">-</template>
-            <template v-else>{{$t("unknown")}}</template>
-          </td>
-        </template>
-      </tr>
-      <tr v-if="isPropDisplayed('time') || isPropDisplayed('fps')">
-        <template v-if="isPropDisplayed('time')">
-          <td class="prop-label">{{$t("image-time")}}</td>
-          <td class="prop-content-half" :colspan="isPropDisplayed('fps') ? 1 : 3">
-            {{$tc("count-frames", image.duration, {count: image.duration})}}
-            <template v-if="image.fps && image.duration > 0">
-              ({{formatMinutesSeconds(image.duration / image.fps)}})
-            </template>
-          </td>
-        </template>
-        <template v-if="isPropDisplayed('fps')">
-          <td class="prop-label">{{$t("frame-rate")}}</td>
-          <td class="prop-content-half" :colspan="isPropDisplayed('time') ? 1 : 3">
-            <template v-if="image.fps">{{image.fps.toFixed(3)}} {{$t("frame-per-second")}}</template>
-            <template v-else-if="image.time < 2">-</template>
-            <template v-else>{{$t("unknown")}}</template>
-          </td>
-        </template>
-      </tr>
-      <tr v-if="isPropDisplayed('channels')">
-        <td class="prop-label">{{$t("image-channels")}}</td>
-        <td class="prop-content" colspan="3">
-          {{$tc("count-bands", image.apparentChannels, {count: image.apparentChannels})}}
-          ({{image.channels}} x {{image.samplePerPixel}})
-        </td>
-      </tr>
       <tr v-if="isPropDisplayed('size')">
         <td class="prop-label">{{$t('image-size')}}</td>
-        <td class="prop-content" colspan="3">
+        <td class="prop-content">
           {{`${image.width} x ${image.height} ${$t('pixels')}`}}
+        </td>
+      </tr>
+      <tr v-if="isPropDisplayed('resolution')">
+        <td class="prop-label">{{$t('resolution')}}</td>
+        <td class="prop-content">
+          <template v-if="image.resolution">{{image.resolution.toFixed(3)}} {{$t('um-per-pixel')}}</template>
+          <template v-else>{{$t('unknown')}}</template>
         </td>
       </tr>
       <tr v-if="isPropDisplayed('magnification')">
         <td class="prop-label">{{$t('magnification')}}</td>
-        <td class="prop-content" colspan="3">
+        <td class="prop-content">
           <template v-if="image.magnification">{{image.magnification}}</template>
           <template v-else>{{$t('unknown')}}</template>
         </td>
       </tr>
       <tr>
         <td class="prop-label">{{$t('actions')}}</td>
-        <td class="prop-content" colspan="3">
+        <td class="prop-content">
           <div class="buttons are-small">
-            <button v-if="isPropDisplayed('metadata') && !isBlindModeAndContributor" class="button" @click="isMetadataModalActive = true">
+            <button v-if="isPropDisplayed('metadata')" class="button" @click="isMetadataModalActive = true">
               {{$t('button-metadata')}}
             </button>
             <template v-if="canEdit">
@@ -250,7 +170,7 @@
                 {{$t('button-set-magnification')}}
               </button>
             </template>
-            <a class="button" v-if="canDownloadImages || canManageProject" @click="download(image)">
+            <a class="button" v-if="canDownloadImages || canManageProject" :href="image.downloadURL">
               {{$t('button-download')}}
             </a>
             <template v-if="canEdit">
@@ -286,11 +206,8 @@
   <image-metadata-modal
     :active.sync="isMetadataModalActive"
     :image="image"
-    :properties="onlyMetadataProperties"
-    :error="loadPropertiesError"
   />
 </div>
-
 </template>
 
 <script>
@@ -305,22 +222,13 @@ import CalibrationModal from './CalibrationModal';
 import ImageMetadataModal from './ImageMetadataModal';
 import ImageStatus from './ImageStatus';
 import RenameModal from '@/components/utils/RenameModal';
-import ImageThumbnail from '@/components/image/ImageThumbnail';
-
-import {formatMinutesSeconds} from '@/utils/slice-utils.js';
-
 import {ImageInstance} from 'cytomine-client';
 
-import {appendShortTermToken} from '@/utils/token-utils.js';
-
-import vendorFromFormat from '@/utils/vendor';
-import {PropertyCollection} from 'cytomine-client';
-import constants from '@/utils/constants.js';
+import vendorFromMime from '@/utils/vendor';
 
 export default {
   name: 'image-details',
   components: {
-    ImageThumbnail,
     CytomineDescription,
     CytomineTags,
     CytomineProperties,
@@ -342,24 +250,16 @@ export default {
       isCalibrationModalActive: false,
       isMagnificationModalActive: false,
       isMetadataModalActive: false,
-      properties: [],
-      loadPropertiesError: false
     };
   },
   computed: {
     currentUser: get('currentUser/user'),
     configUI: get('currentProject/configUI'),
-    project: get('currentProject/project'),
-    shortTermToken: get('currentUser/shortTermToken'),
     blindMode() {
-      return ((this.project || {}).blindMode) || false;
+      return ((this.$store.state.currentProject.project || {}).blindMode) || false;
     },
     canDownloadImages() {
-      // Virtual images (null path) cannot be downloaded.
-      return this.image.path !== null && (
-        this.canManageProject ||
-        ((this.project || {}).areImagesDownloadable) || false
-      );
+      return ((this.$store.state.currentProject.project || {}).areImagesDownloadable) || false;
     },
     canManageProject() {
       return this.$store.getters['currentProject/canManageProject'];
@@ -371,53 +271,14 @@ export default {
       return this.blindMode ? this.image.blindedName : this.image.instanceFilename;
     },
     vendor() {
-      return vendorFromFormat(this.image.contentType);
-    },
-    internalUseFilteredProperties() {
-      return this.properties.filter(prop => !prop.key.startsWith(constants.PREFIX_HIDDEN_PROPERTY_KEY));
-    },
-    metadataFilteredProperties() {
-      let props = this.internalUseFilteredProperties.filter(prop => {
-        for (const key in constants.METADATA_PREFIXES) {
-          if (prop.key.startsWith(constants.METADATA_PREFIXES[key])) {
-            return false;
-          }
-        }
-        return true;
-      });
-      return props
-    },
-    onlyMetadataProperties() {
-      let props = this.internalUseFilteredProperties.filter(prop => {
-        for (const key in constants.METADATA_PREFIXES) {
-          if (prop.key.startsWith(constants.METADATA_PREFIXES[key])) {
-            return true;
-          }
-        }
-        return false;
-      });
-      // We sort the properties to improve ease of use in the metadata modal
-      return props.sort((a, b) => a.key.localeCompare(b.key));
-    },
-    /**
-     * BLIND   MANAGER    RESULT
-     * 0       0          1
-     * 0       1          1
-     * 1       0          0
-     * 1       1          1
-     */
-    isBlindModeAndContributor() {
-      return this.blindMode && !this.canManageProject; 
+      return vendorFromMime(this.image.mime);
     }
   },
   methods: {
-    appendShortTermToken,
     isPropDisplayed(prop) {
-      return !this.excludedProperties.includes(prop) && (this.configUI[`project-explore-image-${prop}`] == null || this.configUI[`project-explore-image-${prop}`]);
+      return !this.excludedProperties.includes(prop) && this.configUI[`project-explore-image-${prop}`];
     },
-    download(image) {
-      window.location.assign(appendShortTermToken(image.downloadURL, this.shortTermToken), '_blank');
-    },
+
     async cancelReview() {
       let errorLabel = this.image.reviewed ? 'notif-error-unvalidate-review' : 'notif-error-cancel-review';
       try {
@@ -468,7 +329,7 @@ export default {
         });
         this.$emit('delete');
 
-        let updatedProject = this.project.clone();
+        let updatedProject = this.$store.state.currentProject.project.clone();
         updatedProject.numberOfImages--;
         this.$store.dispatch('currentProject/updateProject', updatedProject);
       }
@@ -479,27 +340,9 @@ export default {
           text: this.$t('notif-error-image-deletion', {imageName: this.imageNameNotif})
         });
       }
-    },
-    formatMinutesSeconds(time) {
-      return formatMinutesSeconds(time);
-    },
-    removeProp(prop) {
-      this.properties = this.properties.filter(p => p.id !== prop.id);
-    },
-    addProp(prop) {
-      this.properties.push(prop);
-    }
-  },
-  async created() {
-    try {
-      this.properties = (await PropertyCollection.fetchAll({ object: this.image })).array;
-    }
-    catch (error) {
-      this.loadPropertiesError = true;
-      console.log(error);
     }
   }
-}
+};
 </script>
 
 <style scoped>
@@ -518,10 +361,6 @@ td.prop-content {
   width: 100%;
 }
 
-td.prop-content-half {
-  width: 50%;
-}
-
 .format {
   text-transform: uppercase;
 }
@@ -531,7 +370,7 @@ td.prop-content-half {
   max-width: 12rem;
 }
 
-::v-deep .image-thumbnail {
+.image-overview {
   max-height: 18rem;
   max-width: 50vw;
 }

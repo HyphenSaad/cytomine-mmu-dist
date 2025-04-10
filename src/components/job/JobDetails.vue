@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.-->
+
 
 <template>
 <div class="job-details-wrapper">
@@ -35,14 +36,6 @@
             <td>{{$t('execution-duration')}}</td>
             <td>{{Number(job.updated) - Number(job.created) | duration('humanize')}}</td>
           </tr>
-          <tr v-if="currentUser.isDeveloper">
-            <td>{{$t('job-id')}}</td>
-            <td>{{job.id}}</td>
-          </tr>
-          <tr v-if="currentUser.isDeveloper">
-            <td>{{$t('userjob-id')}}</td>
-            <td>{{job.userJob}}</td>
-          </tr>
           <tr>
             <td>{{$t('parameters')}}</td>
             <td>
@@ -53,7 +46,6 @@
                 <table class="table is-narrow inline-table is-fullwidth">
                   <thead>
                     <tr>
-                      <th v-if="currentUser.isDeveloper">{{$t('id')}}</th>
                       <th>{{$t('name')}}</th>
                       <th>{{$t('value')}}</th>
                       <th>{{$t('type')}}</th>
@@ -61,7 +53,6 @@
                   </thead>
                   <tbody>
                     <tr v-for="param in job.jobParameters.array" :key="param.id">
-                      <td v-if="currentUser.isDeveloper">{{param.id}}</td>
                       <td>{{param.humanName}}</td>
                       <td>{{param.value}}</td>
                       <td>{{$t(param.type.toLowerCase())}}</td>
@@ -124,8 +115,8 @@
                     <td>{{filesize(data.size)}}</td>
                     <td>
                       <div class="buttons">
-                        <a class="button is-small" @click="viewData(data)">{{$t('button-view')}}</a>
-                        <a class="button is-small" @click="downloadData(data)">{{$t('button-download')}}</a>
+                        <a class="button is-small" :href="data.viewURL" target='_blank'>{{$t('button-view')}}</a>
+                        <a class="button is-small" :href="data.downloadURL">{{$t('button-download')}}</a>
                       </div>
                     </td>
                   </tr>
@@ -203,7 +194,6 @@ import CytomineTags from '@/components/tag/CytomineTags';
 import constants from '@/utils/constants.js';
 const REFRESH_INTERVAL = constants.JOB_DETAILS_REFRESH_INTERVAL;
 const REFRESH_LOG_INTERVAL = constants.JOB_LOGS_REFRESH_INTERVAL;
-import {appendShortTermToken} from '@/utils/token-utils.js';
 
 export default {
   name: 'job-details',
@@ -234,8 +224,6 @@ export default {
   },
   computed: {
     project: get('currentProject/project'),
-    currentUser: get('currentUser/user'),
-    shortTermToken: get('currentUser/shortTermToken'),
     canManageJob() {
       return this.$store.getters['currentProject/canManageJob'](this.job);
     },
@@ -259,7 +247,6 @@ export default {
     }
   },
   methods: {
-    appendShortTermToken,
     async refresh(force=false) {
       if(this.isFinished && !force) {
         return;
@@ -276,12 +263,6 @@ export default {
     },
     filesize(size) {
       return filesize(size, {base: 10});
-    },
-    viewData(data) {
-      window.location.assign(appendShortTermToken(data.viewURL, this.shortTermToken), '_blank');
-    },
-    downloadData(data) {
-      window.location.assign(appendShortTermToken(data.downloadURL, this.shortTermToken), '_blank');
     },
     async fetchLog() {
       if (this.isFinished) {

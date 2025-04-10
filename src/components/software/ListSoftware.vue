@@ -1,17 +1,3 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
-      http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.-->
-
 <template>
 <div class="list-software-wrapper content-wrapper">
   <b-loading :is-full-page="false" :active="loading" />
@@ -113,7 +99,7 @@
       >
         <template #default="{row: software}">
           <b-table-column field="name" :label="$t('name')" sortable width="250">
-            <router-link :to="`/algorithm/${software.id}`">
+            <router-link :to="`/software/${software.id}`">
               {{ software.fullName }}
             </router-link>
           </b-table-column>
@@ -139,7 +125,7 @@
           </b-table-column>
 
           <b-table-column label=" " centered width="150">
-            <router-link :to="`/algorithm/${software.id}`" class="button is-small is-link">
+            <router-link :to="`/software/${software.id}`" class="button is-small is-link">
               {{$t('button-open')}}
             </router-link>
           </b-table-column>
@@ -182,7 +168,6 @@ import SoftwareStatus from '@/components/software/SoftwareStatus';
 import BooleanItem from '@/components/utils/BooleanItem';
 import SoftwareDetails from '@/components/software/SoftwareDetails';
 
-import {isBetweenBounds} from '@/utils/bounds';
 import {get, sync, syncFilter, syncBoundsFilter} from '@/utils/store-helpers';
 import {getWildcardRegexp} from '@/utils/string-utils';
 
@@ -249,8 +234,8 @@ export default {
       }
 
       filtered = filtered.filter(software => {
-        return isBetweenBounds(software.numberOfJob, this.boundsJobs) &&
-          isBetweenBounds(software.numberOfSuccess, this.boundsSuccessJobs) &&
+        return (software.numberOfJob >= this.boundsJobs[0] && software.numberOfJob <= this.boundsJobs[1]) &&
+          (software.numberOfSuccess >= this.boundsSuccessJobs[0] && software.numberOfSuccess <= this.boundsSuccessJobs[1]) &&
           ((this.onlyLastReleases && software.softwareVersion && !software.deprecated) || !this.onlyLastReleases) &&
           ((this.onlyExecutables && software.executable) || !this.onlyExecutables);
       });

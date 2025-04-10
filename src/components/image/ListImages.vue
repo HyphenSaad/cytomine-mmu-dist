@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.-->
+
 
 <template>
 <div class="box error" v-if="!configUI['project-images-tab']">
@@ -51,25 +52,115 @@
         </button>
       </div>
 
-      <metadata-search
-        v-if="filtersOpened"
-        :formats="availableFormats"
-        :image-ids="imageIds"
-        :magnifications="availableMagnifications"
-        :max-height="maxHeight"
-        :max-width="maxWidth"
-        :max-nb-job-annotations="maxNbJobAnnotations"
-        :max-nb-reviewed-annotations="maxNbReviewedAnnotations"
-        :max-nb-user-annotations="maxNbUserAnnotations"
-        :metadata="metadata"
-        :resolutions="availableResolutions"
-        :tags="availableTags"
-        :vendors="availableVendors"
-      />
+      <b-collapse :open="filtersOpened">
+        <div class="filters">
+          <div class="columns">
+            <div class="column filter is-one-quarter">
+              <div class="filter-label">
+                {{$t('format')}}
+              </div>
+              <div class="filter-body">
+                <cytomine-multiselect v-model="selectedFormats" :options="availableFormats" multiple />
+              </div>
+            </div>
+
+            <div class="column filter is-one-quarter">
+              <div class="filter-label">
+                {{$t('vendor')}}
+              </div>
+              <div class="filter-body">
+                <cytomine-multiselect v-model="selectedVendors" :options="availableVendors"
+                    :multiple="true" label="label" track-by="value"/>
+              </div>
+            </div>
+
+            <div class="column filter is-one-quarter">
+              <div class="filter-label">
+                {{$t('tags')}}
+              </div>
+              <div class="filter-body">
+                <cytomine-multiselect v-model="selectedTags" :options="availableTags"
+                  label="name" track-by="id" :multiple="true" :allPlaceholder="$t('all')" />
+              </div>
+            </div>
+
+          </div>
+
+          <div class="columns">
+            <div class="column filter">
+              <div class="filter-label">
+                {{$t('magnification')}}
+              </div>
+              <div class="filter-body">
+                <cytomine-multiselect v-model="selectedMagnifications" :options="availableMagnifications"
+                    :multiple="true" :searchable="false" label="label" track-by="value"/>
+              </div>
+            </div>
+
+            <div class="column filter">
+              <div class="filter-label">
+                {{$t('resolution')}}
+              </div>
+              <div class="filter-body">
+                <cytomine-multiselect v-model="selectedResolutions" :options="availableResolutions"
+                    :multiple="true" :searchable="false" label="label" track-by="value" />
+              </div>
+            </div>
+
+            <div class="column">
+              <div class="filter-label">
+                {{$t('width')}}
+              </div>
+              <div class="filter-body">
+                <cytomine-slider v-model="boundsWidth" :max="maxWidth" />
+              </div>
+            </div>
+
+            <div class="column">
+              <div class="filter-label">
+                {{$t('height')}}
+              </div>
+              <div class="filter-body">
+                <cytomine-slider v-model="boundsHeight" :max="maxHeight" />
+              </div>
+            </div>
+          </div>
+
+          <div class="columns">
+            <div class="column filter">
+              <div class="filter-label">
+                {{$t('user-annotations')}}
+              </div>
+              <div class="filter-body">
+                <cytomine-slider v-model="boundsUserAnnotations" :max="maxNbUserAnnotations" />
+              </div>
+            </div>
+
+            <div class="column filter">
+              <div class="filter-label">
+                {{$t('analysis-annotations')}}
+              </div>
+              <div class="filter-body">
+                <cytomine-slider v-model="boundsJobAnnotations" :max="maxNbJobAnnotations" />
+              </div>
+            </div>
+
+            <div class="column filter">
+              <div class="filter-label">
+                {{$t('reviewed-annotations')}}
+              </div>
+              <div class="filter-body">
+                <cytomine-slider v-model="boundsReviewedAnnotations" :max="maxNbReviewedAnnotations" />
+              </div>
+            </div>
+
+            <div class="column filter"></div>
+          </div>
+        </div>
+      </b-collapse>
 
       <cytomine-table
         :collection="imageCollection"
-        :is-empty="nbEmptyFilters > 0"
         :currentPage.sync="currentPage"
         :perPage.sync="perPage"
         :openedDetailed.sync="openedDetails"
@@ -78,9 +169,9 @@
         :revision="revision"
       >
         <template #default="{row: image}">
-          <b-table-column :label="$t('overview')" width="100" :visible="isPropDisplayed('overview')">
+          <b-table-column :label="$t('overview')" width="100">
             <router-link :to="`/project/${image.project}/image/${image.id}`">
-              <image-thumbnail :image="image" :size="128" :key="`${image.id}-thumb-128`" :extra-parameters="{Authorization: 'Bearer ' + shortTermToken }"/>
+              <img :src="image.thumbURL(256)" class="image-overview">
             </router-link>
           </b-table-column>
 
@@ -152,14 +243,14 @@
 import {get, sync, syncMultiselectFilter, syncBoundsFilter} from '@/utils/store-helpers';
 
 import CytomineTable from '@/components/utils/CytomineTable';
-import MetadataSearch from '@/components/search/MetadataSearch';
+import CytomineMultiselect from '@/components/form/CytomineMultiselect';
+import CytomineSlider from '@/components/form/CytomineSlider';
 import ImageName from './ImageName';
 import ImageDetails from './ImageDetails';
 import AddImageModal from './AddImageModal';
-import vendorFromFormat from '@/utils/vendor';
+import vendorFromMime from '@/utils/vendor';
 
-import {ImageInstanceCollection, PropertyCollection, TagCollection} from 'cytomine-client';
-import ImageThumbnail from '@/components/image/ImageThumbnail';
+import {ImageInstanceCollection, TagCollection} from 'cytomine-client';
 
 // store options to use with store helpers to target projects/currentProject/listImages module
 const storeOptions = {rootModuleProp: 'storeModule'};
@@ -170,20 +261,18 @@ const localSyncBoundsFilter = (filterName, maxProp) => syncBoundsFilter(null, fi
 export default {
   name: 'list-images',
   components: {
-    ImageThumbnail,
     ImageName,
     ImageDetails,
     CytomineTable,
-    AddImageModal,
-    MetadataSearch,
+    CytomineMultiselect,
+    CytomineSlider,
+    AddImageModal
   },
   data() {
     return {
       loading: true,
       error: false,
       images: [],
-      metadata: {},
-      filteredImageIDs: [],
       addImageModal: false,
       excludedProperties: [
         'overview',
@@ -191,8 +280,7 @@ export default {
         'magnification',
         'numberOfAnnotations',
         'numberOfJobAnnotations',
-        'numberOfReviewedAnnotations',
-        'size'
+        'numberOfReviewedAnnotations'
       ],
       availableFormats: [],
       availableVendors: [],
@@ -211,7 +299,6 @@ export default {
     currentUser: get('currentUser/user'),
     configUI: get('currentProject/configUI'),
     project: get('currentProject/project'),
-    shortTermToken: get('currentUser/shortTermToken'),
     blindMode() {
       return this.project.blindMode;
     },
@@ -245,28 +332,21 @@ export default {
 
     multiSelectFilters() {
       return [
-        {prop: 'contentType', selected: this.selectedContentTypes, total: this.availableFormats.length},
+        {prop: 'extension', selected: this.selectedFormats, total: this.availableFormats.length},
         {prop: 'vendor', selected: this.selectedVendors.map(option => option.value), total: this.availableVendors.length},
         {prop: 'magnification', selected: this.selectedMagnifications.map(option => option.value), total: this.availableMagnifications.length},
-        {prop: 'physicalSizeX', selected: this.selectedResolutions.map(option => option.value), total: this.availableResolutions.length},
+        {prop: 'resolution', selected: this.selectedResolutions.map(option => option.value), total: this.availableResolutions.length},
         {prop: 'tag', selected: this.selectedTags.map(option => option.id), total: this.availableTags.length}
       ];
     },
 
-    selectedContentTypes() {
-      let selectedVendors = this.selectedVendors.map(option => option.value);
-      let availableVendors = this.availableVendors.map(option => option.value);
-      let allowUnknown = selectedVendors.includes('null');
-      return this.selectedFormats.filter(ct => (availableVendors.includes(ct)) ? selectedVendors.includes(ct) : allowUnknown);
-    },
-
     boundsFilters() {
       return [
-        {prop: 'width', bounds: this.boundsWidth, max: this.maxWidth},
-        {prop: 'height', bounds: this.boundsHeight, max: this.maxHeight},
-        {prop: 'numberOfAnnotations', bounds: this.boundsUserAnnotations, max: this.maxNbUserAnnotations},
-        {prop: 'numberOfJobAnnotations', bounds: this.boundsJobAnnotations, max: this.maxNbJobAnnotations},
-        {prop: 'numberOfReviewedAnnotations', bounds: this.boundsReviewedAnnotations, max: this.maxNbReviewedAnnotations},
+        {prop: 'width', bounds: this.boundsWidth},
+        {prop: 'height', bounds: this.boundsHeight},
+        {prop: 'numberOfAnnotations', bounds: this.boundsUserAnnotations},
+        {prop: 'numberOfJobAnnotations', bounds: this.boundsJobAnnotations},
+        {prop: 'numberOfReviewedAnnotations', bounds: this.boundsReviewedAnnotations},
       ];
     },
 
@@ -280,56 +360,25 @@ export default {
           ilike: encodeURIComponent(this.searchString)
         };
       }
-      for(let {prop, bounds, max} of this.boundsFilters) {
-        collection[prop] = {};
-        if (bounds[1]!==max) {
-          // if max bounds is the max possible value, do not set the filter in the request
-          // so that if an event (ex: algo creates an annotation) happens between the bounds request and the query request
-          // the image will not be skipped from the result
-          collection[prop] = {
-            lte: bounds[1]
-          };
-        }
+      for(let {prop, bounds} of this.boundsFilters) {
+        collection[prop] = {
+          lte: bounds[1]
+        };
         if(bounds[0] > 0) collection[prop]['gte'] = bounds[0];
       }
       for(let {prop, selected, total} of this.multiSelectFilters) {
+        if(prop == 'vendor') prop = 'mimeType';
         if(selected.length > 0 && selected.length < total) {
           collection[prop] = {
             in: selected.join()
           };
         }
       }
-
-      let filteredIDs = [];
-      this.selectedFormats.forEach(format => filteredIDs = filteredIDs.concat(this.filteredImageIDs[format]));
-      if (filteredIDs.length === 0) {
-        for (let ids of Object.values(this.filteredImageIDs)) {
-          filteredIDs = filteredIDs.concat(ids);
-        }
-      }
-
-      if (filteredIDs.length > 0) {
-        collection['include'] = {
-          in: filteredIDs.join(',')
-        };
-      }
-
       return collection;
-    },
-
-    imageIds() {
-      let ids = {};
-      this.availableFormats.forEach(format => ids[format] = []);
-      this.images.forEach(image => ids[image.contentType].push(image.baseImage));
-
-      return ids;
     },
 
     nbActiveFilters() {
       return this.$store.getters[this.storeModule + '/nbActiveFilters'];
-    },
-    nbEmptyFilters() {
-      return this.$store.getters[this.storeModule + '/nbEmptyFilters'] + ((this.selectedContentTypes.length > 0) ? 0 : 1);
     },
 
     currentPage: sync('currentPage', storeOptions),
@@ -349,59 +398,31 @@ export default {
 
 
       this.availableFormats = stats.format.list;
-
-      stats.format.list.forEach(format => {
-        let vendor = vendorFromFormat(format);
-        let vendorFormatted = {
-          value: vendor ? format : 'null',
+      this.availableVendors = stats.mimeType.list.map(mime => {
+        let vendor = vendorFromMime(mime);
+        return {
+          value: mime || 'null',
           label: vendor ? vendor.name : this.$t('unknown')
         };
-
-        if (!this.availableVendors.find(vendor => vendor.value === vendorFormatted.value)) {
-          this.availableVendors.push(vendorFormatted);
-        }
-
-        this.filteredImageIDs[format] = [];
       });
-
       this.availableMagnifications = stats.magnification.list.map(m => {
         return {
           value: m || 'null',
           label: m || this.$t('unknown')
         };
       });
-      // this.availableResolutions = stats.resolution.list.map(resolution => {
-      //   return {
-      //     value: resolution || 'null',
-      //     label: resolution ? `${resolution.toFixed(3)} ${this.$t('um-per-pixel')}` : this.$t('unknown')
-      //   };
-      // });
+      this.availableResolutions = stats.resolution.list.map(resolution => {
+        return {
+          value: resolution || 'null',
+          label: resolution ? `${resolution.toFixed(3)} ${this.$t('um-per-pixel')}` : this.$t('unknown')
+        };
+      });
     },
     async fetchTags() {
       this.availableTags = [{id: 'null', name: this.$t('no-tag')}, ...(await TagCollection.fetchAll()).array];
     },
-    async fetchImages() {
-      this.images = (await ImageInstanceCollection.fetchAll({
-        filterKey: 'project',
-        filterValue: this.project.id,
-      })).array;
-
-      await Promise.all(this.images.map(async (image) => {
-        let properties = (await PropertyCollection.fetchAll({object: image})).array;
-        properties.sort((a, b) => a.key.localeCompare(b.key));
-
-        if (!(image.contentType in this.metadata)) {
-          this.metadata[image.contentType] = {};
-        }
-
-        this.metadata[image.contentType][image.id] = properties;
-        this.filteredImageIDs[image.contentType].push(image.baseImage);
-      }));
-    },
 
     async refreshData() {
-      this.$store.commit('currentProject/resetMetadataFilters');
-
       try {
         await Promise.all([
           this.fetchFilters(),
@@ -416,13 +437,6 @@ export default {
 
     toggleFilterDisplay() {
       this.filtersOpened = !this.filtersOpened;
-    },
-    isPropDisplayed(prop) {
-      return this.excludedProperties.includes(prop) && (this.configUI[`project-explore-image-${prop}`] == null || this.configUI[`project-explore-image-${prop}`]);
-    },
-    includeImageIDs(format, imageIDs) {
-      this.$delete(this.filteredImageIDs, format);
-      this.$set(this.filteredImageIDs, format, imageIDs);
     }
   },
   watch: {
@@ -440,8 +454,7 @@ export default {
     try {
       await Promise.all([
         this.fetchFilters(),
-        this.fetchTags(),
-        this.fetchImages(),
+        this.fetchTags()
       ]);
       this.loading = false;
     }
@@ -455,12 +468,6 @@ export default {
         this.selectedTags = queriedTags;
       }
     }
-  },
-  mounted() {
-    this.$eventBus.$on('includeImageIDs', this.includeImageIDs);
-  },
-  beforeDestroy() {
-    this.$eventBus.$off('includeImageIDs', this.includeImageIDs);
   }
 };
 </script>
@@ -472,7 +479,7 @@ export default {
   align-items: center;
 }
 
-::v-deep .image-thumbnail {
+.image-overview {
   max-height: 4rem;
   max-width: 10rem;
 }
@@ -481,12 +488,12 @@ export default {
   display: flex;
 }
 
-::v-deep .search-images {
+>>> .search-images {
   max-width: 30rem;
   margin-right: 1rem;
 }
 
-::v-deep td, ::v-deep th {
+>>> td, >>> th {
   vertical-align: middle !important;
 }
 </style>

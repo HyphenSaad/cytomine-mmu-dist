@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.-->
 
+
 <template>
 <b-datepicker
   :class="styles"
@@ -21,7 +22,6 @@
   :min-date="minDate" :max-date="maxDate"
   :month-names="moment.months()" :day-names="moment.weekdaysMin()"
   :date-formatter="date => moment(date).format('ll')" size="is-small"
-  :position="position"
 >
   <div v-if="resetButton" class="has-text-centered">
     <button class="button is-small is-link" :disabled="!value" @click="$emit('input', null)">
@@ -42,8 +42,7 @@ export default {
     maxDate: Date,
     minDate: Date,
     placeholder: String,
-    styles: {type: Array, default: () => []}, // accept "multiselect", "bold-placeholder",
-    position: {type: String, default: null}
+    styles: {type: Array, default: () => []} // accept "multiselect", "bold-placeholder"
   },
   computed: {
     moment() {

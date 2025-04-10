@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -81,9 +81,7 @@ export default {
   methods: {
     async loginWithToken() {
       try {
-        let {shortTermToken} = await Cytomine.instance.loginWithToken(this.$route.query.username, this.$route.query.token);
-        this.$store.commit('currentUser/setShortTermToken', shortTermToken);
-
+        await Cytomine.instance.loginWithToken(this.$route.query.username, this.$route.query.token);
         await this.fetchUser();
       }
       catch(error) {
@@ -96,10 +94,7 @@ export default {
         return; // window not visible or inactive user => stop pinging
       }
       try {
-        let {authenticated, shortTermToken} = await Cytomine.instance.ping(this.project ? this.project.id : null);
-
-        this.$store.commit('currentUser/setShortTermToken', shortTermToken);
-
+        let {authenticated} = await Cytomine.instance.ping(this.project ? this.project.id : null);
         if(this.currentUser && !authenticated) {
           await this.$store.dispatch('logout');
         }
@@ -110,13 +105,7 @@ export default {
       }
       catch(error) {
         console.log(error);
-        if (error.toString().indexOf('401')!==-1) {
-          this.communicationError = false;
-          Cytomine.instance.logout();
-        }
-        else {
-          this.communicationError = true;
-        }
+        this.communicationError = true;
       }
 
       clearTimeout(this.timeout);
@@ -130,21 +119,14 @@ export default {
     }
   },
   async created() {
-    let settings;
+    let Settings;
     await axios
       .get('configuration.json')
-      .then(response => (settings = response.data));
+      .then(response => (Settings = response.data));
 
-    await axios
-      .get('meta-prefixes.json')
-      .then(response => {
-        constants.METADATA_PREFIXES = response.data
-      });
-    
-    for (let i in settings) {
-      if (Object.prototype.hasOwnProperty.call(constants, i)
-        || i.includes('_NAMESPACE') || i.includes('_VERSION') || i.includes('_ENABLED')) {
-        constants[i] = settings[i];
+    for(var i in constants){
+      if(Settings.hasOwnProperty(i)) {
+        constants[i] = Settings[i];
       }
     }
     Object.freeze(constants);

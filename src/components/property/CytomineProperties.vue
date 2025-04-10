@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -12,9 +12,11 @@
  See the License for the specific language governing permissions and
  limitations under the License.-->
 
+
 <template>
 <div class="properties-wrapper">
-  <template>
+  <b-loading :is-full-page="false" :active="loading" />
+  <template v-if="!loading">
     <b-field grouped group-multiline>
       <em v-if="error">{{$t('error-fetch-properties')}}</em>
       <div class="control" v-else-if="properties.length > 0" v-for="(prop, idx) in notEditedProperties" :key="prop.id">
@@ -32,11 +34,12 @@
           </b-tag>
         </b-taglist>
       </div>
-      <em v-else>{{$t('no-properties')}}</em>
+      <em v-else-if="properties.length === 0">{{$t('no-properties')}}</em>
 
       <button v-if="canEdit" class="button is-small add-prop" @click="addNewProp()" key="showForm">
         {{$t('button-add')}}
       </button>
+      <em v-else-if="properties.length === 0">{{$t('no-properties')}}</em>
     </b-field>
 
     <form @submit.prevent="saveProp(idx)" class="new-prop-form" v-for="(prop, idx) in editedProperties" :key="prop.id">
@@ -61,12 +64,14 @@ export default {
   name: 'cytomine-properties',
   props: {
     object: {type: Object},
-    canEdit: {type: Boolean, default: true},
-    properties: {type: Array},
-    error: {type: Boolean, default: false}
+    canEdit: {type: Boolean, default: true}
   },
   data() {
     return {
+      loading: true,
+      error: false,
+
+      properties: [],
       editedProperties: [],
       newPropKey: '',
       newPropValue: '',
@@ -88,11 +93,8 @@ export default {
       let prop = this.properties[idx];
       try {
         await Property.delete(prop.id, this.object);
-        // In a future and longer refactor, add, editing and removing should simply send events to the parent
-        // Or dispatch an action that would trigger an "effect" on the store...
-        this.$emit('deleted', prop);
-        // For PropertiesPanel update
-        this.$emit('updateProperties');
+        this.properties.splice(idx, 1);
+        this.$emit('update');
       }
       catch(error) {
         console.log(error);
@@ -122,12 +124,9 @@ export default {
         await prop.save();
         this.editedProperties.splice(idx, 1);
         if(newProp) {
-        // In a future and longer refactor, add, editing and removing should simply send events to the parent
-        // Or dispatch an action that would trigger an "effect" on the store...
-          this.$emit('added', prop);
+          this.properties.push(prop);
         }
-        // For PropertiesPanel update
-        this.$emit('updateProperties');
+        this.$emit('update');
       }
       catch(error) {
         console.log(error);
@@ -140,6 +139,17 @@ export default {
       prop.value = prop.oldValue;
       this.editedProperties.splice(idx, 1);
     },
+  },
+  async created() {
+    try {
+      let props = (await PropertyCollection.fetchAll({object: this.object})).array;
+      this.properties = props.filter(prop => !prop.key.startsWith(constants.PREFIX_HIDDEN_PROPERTY_KEY)); // filter the properties used internally
+    }
+    catch(error) {
+      console.log(error);
+      this.error = true;
+    }
+    this.loading = false;
   }
 };
 </script>

@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.-->
+
 
 <template>
 <b-message v-if="error" type="is-danger" has-icon icon-size="is-small">
@@ -59,13 +60,11 @@ import {get} from '@/utils/store-helpers';
 
 import IconPolygonFreeHand from '@/components/icons/IconPolygonFreeHand';
 import IconLineFreeHand from '@/components/icons/IconLineFreeHand';
-import constants from '@/utils/constants.js';
 
 export default {
   name: 'custom-ui-project',
   data() {
     return {
-      algoEnabled: constants.ALGORITHMS_ENABLED,
       loading: true,
       error: false,
 
@@ -89,12 +88,10 @@ export default {
             //{key: 'project-explore-image-status', label: 'status'},
             {key: 'project-explore-image-description', label: 'description', icon: 'far fa-file-alt'},
             {key: 'project-explore-image-tags', label: 'tags', icon: 'fas fa-bookmark'},
-            {key: 'project-explore-image-tracks', label: 'tracks', icon: 'fas fa-route'},
             {key: 'project-explore-image-properties', label: 'properties', icon: 'fas fa-tag'},
             {key: 'project-explore-image-attached-files', label: 'attached-files', icon: 'fas fa-paperclip'},
             {key: 'project-explore-image-slide-preview', label: 'slide-preview', icon: 'fas fa-image'},
             {key: 'project-explore-image-original-filename', label: 'originalFilename', icon: 'fas fa-info'},
-            {key: 'project-explore-image-metadata', label: 'image-metadata', icon: 'fas fa-asterisk'},
             /*{key: 'project-explore-image-format', label: 'format'},
             {key: 'project-explore-image-vendor', label: 'vendor'},
             {key: 'project-explore-image-size', label: 'size'},
@@ -132,6 +129,7 @@ export default {
             {key: 'project-explore-annotation-attached-files', label: 'attached-files', icon: 'fas fa-paperclip', parentConfiguration: 'project-explore-annotation-main'},
             {key: 'project-explore-annotation-creation-info', label: 'creation-info', icon: 'fas fa-info', parentConfiguration: 'project-explore-annotation-main'},
             {key: 'project-explore-annotation-comments', label: 'comments', icon: 'fas fa-comment', parentConfiguration: 'project-explore-annotation-main'}
+
           ]
         },
         {
@@ -141,7 +139,7 @@ export default {
 
             {key: 'project-tools-select', label: 'select', icon: 'fas fa-mouse-pointer', parentConfiguration: 'project-tools-main'},
 
-            {key: 'project-tools-point', label: 'point', icon: 'fas fa-map-pin', parentConfiguration: 'project-tools-main'},
+            {key: 'project-tools-point', label: 'point', icon: 'fas fa-map-marker-alt', parentConfiguration: 'project-tools-main'},
             {key: 'project-tools-line', label: 'line', icon: 'fas fa-minus', parentConfiguration: 'project-tools-main'},
             {key: 'project-tools-freehand-line', label: 'freehand-line',
               iconComponent: IconLineFreeHand, parentConfiguration: 'project-tools-main'},
@@ -150,7 +148,6 @@ export default {
             {key: 'project-tools-polygon', label: 'polygon', icon: 'fas fa-draw-polygon', parentConfiguration: 'project-tools-main'},
             {key: 'project-tools-freehand-polygon', label: 'freehand-polygon',
               iconComponent: IconPolygonFreeHand, parentConfiguration: 'project-tools-main'},
-            {key: 'project-tools-screenshot', label: 'screenshot', icon: 'fas fa-camera', parentConfiguration: 'project-tools-main'},
             {key: 'project-tools-union', label: 'freehand-correct-add', icon: 'fas fa-pencil-alt',
               superscript: 'fas fa-plus', parentConfiguration: 'project-tools-main'},
             {key: 'project-tools-diff', label: 'freehand-correct-remove', icon: 'fas fa-pencil-alt',
@@ -159,10 +156,9 @@ export default {
             {key: 'project-tools-fill', label: 'fill', icon: 'fas fa-fill', parentConfiguration: 'project-tools-main'},
             {key: 'project-tools-edit', label: 'modify', icon: 'fas fa-edit', parentConfiguration: 'project-tools-main'},
             {key: 'project-tools-move', label: 'move', icon: 'fas fa-arrows-alt', parentConfiguration: 'project-tools-main'},
-            {key: 'project-tools-resize', label: 'rescale', icon: 'fas fa-expand', parentConfiguration: 'project-tools-main'},
             {key: 'project-tools-rotate', label: 'rotate', icon: 'fas fa-sync-alt', parentConfiguration: 'project-tools-main'},
             {key: 'project-tools-delete', label: 'delete', icon: 'fas fa-trash-alt', parentConfiguration: 'project-tools-main'},
-            {key: 'project-tools-copy-paste', label: 'copy-paste', icon: 'fas fa-copy', parentConfiguration: 'project-tools-main'},
+
             {key: 'project-tools-undo-redo', label: 'undo-redo', icon: 'fas fa-undo', parentConfiguration: 'project-tools-main'},
           ]
         }
@@ -191,10 +187,7 @@ export default {
   },
   async created() {
     try {
-      if(!this.algoEnabled) this.customUITree[0].props.splice(2,1);
-
       this.customUI = await this.project.fetchUIConfig();
-      console.log(this.customUI);
     }
     catch(error) {
       console.log(error);

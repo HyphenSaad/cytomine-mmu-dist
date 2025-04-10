@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009-2022. Authors: see NOTICE file.
+* Copyright (c) 2009-2021. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -19,9 +19,7 @@ import {Cytomine, User} from 'cytomine-client';
 function getDefaultState() {
   return {
     user: null,
-    expandedSidebar: true,
-    increment: 0,
-    shortTermToken: null
+    expandedSidebar: true
   };
 }
 
@@ -33,9 +31,6 @@ export default {
   mutations: {
     setUser(state, user) {
       state.user = user ? user.clone() : null;
-    },
-    setShortTermToken(state, value) {
-      state.shortTermToken = value;
     },
     setAdminByNow(state, value) {
       state.user.adminByNow = value;
@@ -74,24 +69,14 @@ export default {
       await Cytomine.instance.openAdminSession();
       commit('setAdminByNow', true);
     },
-    async closeAdminSession({dispatch}) {
+    async closeAdminSession({commit}) {
       await Cytomine.instance.closeAdminSession();
-      await dispatch('fetchUser');
+      commit('setAdminByNow', false);
     },
 
-    async login({dispatch, commit}, payload) {
-      let {shortTermToken} = await Cytomine.instance.login(payload.username, payload.password, payload.rememberMe);
-      commit('setShortTermToken', shortTermToken);
+    async login({dispatch}, payload) {
+      await Cytomine.instance.login(payload.username, payload.password, payload.rememberMe);
       await dispatch('fetchUser');
     }
-  },
-
-  getters: {
-      currentShortTermToken: (state, _, rootState) => {
-        let currentUser = rootState.currentUser || {};
-        return currentUser.shortTermToken;
-      },
-
   }
-
 };

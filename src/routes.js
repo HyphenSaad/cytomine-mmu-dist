@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009-2022. Authors: see NOTICE file.
+* Copyright (c) 2009-2021. Authors: see NOTICE file.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
 import VueRouter from 'vue-router';
 
 // Import Components
@@ -58,11 +59,11 @@ const routes = [
     component: ListOntologies
   },
   {
-    path: '/algorithm',
+    path: '/software',
     component: ListSoftware
   },
   {
-    path: '/algorithm/:idSoftware',
+    path: '/software/:idSoftware',
     component: SoftwareInformation
   },
   {
@@ -90,19 +91,11 @@ const routes = [
         component: CytomineViewer
       },
       {
-        path: 'image/:idImages/slice/:idSlices',
-        component: CytomineViewer
-      },
-      {
         path: 'image/:idImage/information',
         component: ImageInformation
       },
       {
         path: 'image/:idImages/annotation/:idAnnotation',
-        component: CytomineViewer
-      },
-      {
-        path: 'image/:idImages/slice/:idSlices/annotation/:idAnnotation',
         component: CytomineViewer
       },
       {
@@ -149,8 +142,6 @@ const routes = [
   {path: '/project', redirect: '/projects'},
   {path: '/explorer', redirect: '/'},
   {path: '/upload', redirect: '/storage'},
-  {path: '/software', redirect: '/algorithm'},
-  {path: '/software/:idSoftware', redirect: '/algorithm/:idSoftware'},
 
   {path: '/activity', redirect: '/'},
   {path: '/activity-:idProject-', redirect: '/project/:idProject/activity'},

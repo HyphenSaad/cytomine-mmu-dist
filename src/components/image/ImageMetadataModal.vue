@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.-->
 
+
 <template>
 <cytomine-modal :active="active" :title="$t('image-metadata')" @close="$emit('update:active', false)">
   <b-message v-if="error" type="is-danger" has-icon icon-size="is-small">
@@ -21,7 +22,7 @@
   <template v-else>
     <template v-if="image && image.macroURL">
       <p :style="styleImagePreview" class="image-preview">
-        <img :class="'rotate-' + rotationAngle" :src="appendShortTermToken(image.associatedImageURL('macro', 256, 'jpg'), shortTermToken)" ref="image">
+        <img :class="'rotate-' + rotationAngle" :src="image.macroURL" ref="image">
       </p>
       <div class="buttons is-centered are-small">
         <button class="button" @click="rotate(-90)"><i class="fas fa-undo"></i></button>
@@ -52,28 +53,26 @@
 </template>
 
 <script>
+import {AbstractImage, PropertyCollection} from 'cytomine-client';
 import CytomineModal from '@/components/utils/CytomineModal';
 import {getWildcardRegexp} from '@/utils/string-utils';
-import {appendShortTermToken} from '@/utils/token-utils.js';
-import {get} from '@/utils/store-helpers';
 
 export default {
   name: 'image-metadata-modal',
   props: {
     active: Boolean,
-    image: Object,
-    properties: {type: Array},
-    error: {type: Boolean, default: false}
+    image: Object
   },
   components: {CytomineModal},
   data() {
     return {
+      error: false,
+      properties: [],
       searchString: '',
       rotationAngle: 0
     };
   },
   computed: {
-    shortTermToken: get('currentUser/shortTermToken'),
     filteredProps() {
       if(!this.searchString) {
         return this.properties;
@@ -94,12 +93,22 @@ export default {
         width: reverse ? height : width,
         height: reverse ? width : height
       };
-    },
+    }
   },
   methods: {
-    appendShortTermToken,
     async rotate(val) {
       this.rotationAngle = (this.rotationAngle + val + 360) % 360;
+    }
+  },
+  async created() {
+    try {
+      let abstractImage = new AbstractImage({id: this.image.baseImage, class: 'be.cytomine.image.AbstractImage'});
+      this.properties = (await PropertyCollection.fetchAll({object: abstractImage})).array;
+      this.properties.sort((a, b) => a.key.localeCompare(b.key));
+    }
+    catch(error) {
+      console.log(error);
+      this.error = true;
     }
   }
 };

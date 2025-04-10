@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.-->
+
 
 <template>
 <div class="layers">
@@ -73,7 +74,6 @@ import {get} from '@/utils/store-helpers';
 
 import {fullName} from '@/utils/user-utils.js';
 import {ProjectDefaultLayerCollection} from 'cytomine-client';
-import _ from 'lodash';
 
 export default {
   name: 'layers-panel',
@@ -107,9 +107,6 @@ export default {
     },
     image() {
       return this.imageWrapper.imageInstance;
-    },
-    slices() {
-      return this.imageWrapper.activeSlices;
     },
     activePanel() {
       return this.imageWrapper.activePanel;
@@ -171,22 +168,6 @@ export default {
           this.layers = this.layers.filter(layer => !layer.isReview);
         }
       }
-    },
-    layersToPreload: {
-      deep: true,
-      handler: function(layersToPreload) {
-        layersToPreload.forEach(layerId => {
-          let index = this.selectedLayersIds.findIndex(id => id === this.reviewLayer.id);
-          if(index !== -1) {
-            if (!this.selectedLayers[index].visible) {
-              this.toggleLayerVisibility(index);
-            }
-            return;
-          }
-
-          this.addLayerById(layerId, true);
-        });
-      }
     }
   },
   methods: {
@@ -224,14 +205,12 @@ export default {
 
       let name = fullName(layer);
 
-      let id = (this.currentUser.isDeveloper) ? ` (${this.$t('id')}: ${layer.id})` : '';
-
       let indexLayer = this.indexLayers.find(index => index.user === layer.id) || {};
-      return `${name}${id} (${indexLayer.countAnnotation || 0})`;
+      return `${name} (${indexLayer.countAnnotation || 0})`;
     },
 
     canDraw(layer) {
-      return !layer.isReview && !layer.algo && this.$store.getters['currentProject/canEditLayer'](layer.id);
+      return !layer.isReview && this.$store.getters['currentProject/canEditLayer'](layer.id);
     },
 
     addLayerById(id, visible) {
@@ -281,29 +260,15 @@ export default {
       if(!force && this.activePanel !== 'layers') {
         return;
       }
-      // TODO: optimize, backend should be able to send indexes for several slices at once.
-      let indexLayers = await Promise.all(this.slices.map(async slice => await slice.fetchAnnotationsIndex()));
-      indexLayers = Object.values(_.groupBy(indexLayers.flat(), 'user'));
-      this.indexLayers = indexLayers.map(userIndexLayers => userIndexLayers.reduce((a, b) => {
-        return {
-          user: a.user,
-          countAnnotation: a.countAnnotation + b.countAnnotation,
-          countReviewedAnnotation: a.countReviewedAnnotation + b.countReviewedAnnotation
-        };
-      }, {user: userIndexLayers[0].user, countAnnotation: 0, countReviewedAnnotation: 0}));
-      // ----
+      this.indexLayers = await this.image.fetchAnnotationsIndex();
     },
 
     shortkeyHandler(key) {
-      if(!key.startsWith('toggle-all-') && !this.isActiveImage) { // shortkey should only be applied to active map
+      if(!this.isActiveImage) { // shortkey should only be applied to active map
         return;
       }
 
-      key = key.replace('toggle-all-', 'toggle-');
-      if(key === 'toggle-selected-layers') {
-        this.selectedLayers.forEach((layer, index) => this.toggleLayerVisibility(index));
-      }
-      else if(key === 'toggle-review-layer') {
+      if(key === 'tool-review-toggle') { // toggle review layer
         let index = this.selectedLayersIds.findIndex(id => id === this.reviewLayer.id);
         if(index !== -1) {
           this.toggleLayerVisibility(index);

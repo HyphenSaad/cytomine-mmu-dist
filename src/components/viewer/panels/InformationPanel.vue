@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.-->
 
+
 <template>
 <div>
   <h1>
@@ -19,67 +20,28 @@
   </h1>
   <table class="table">
     <tbody>
-      <tr v-if="currentUser.isDeveloper">
-        <td><strong>{{$t('id')}}</strong></td>
-        <td>{{image.id}}</td>
-      </tr>
       <tr>
         <td><strong>{{$t('name')}}</strong></td>
         <td><image-name :image="image" showBothNames /></td>
       </tr>
       <tr>
         <td><strong>{{$t('width')}}</strong></td>
-        <td>{{image.width}} {{$t("pixels")}}</td>
+        <td>{{image.width}}</td>
       </tr>
       <tr>
         <td><strong>{{$t('height')}}</strong></td>
-        <td>{{image.height}} {{$t("pixels")}}</td>
-      </tr>
-      <tr v-if="image.depth > 1">
-        <td><strong>{{$t('image-depth')}}</strong></td>
-        <td>{{$tc("count-slices", image.depth, {count: image.depth})}}</td>
-      </tr>
-      <tr v-if="image.duration > 1">
-        <td><strong>{{$t('image-time')}}</strong></td>
-        <td>{{$tc("count-frames", image.duration, {count: image.duration})}}</td>
-      </tr>
-      <tr v-if="image.channels > 1">
-        <td><strong>{{$t('image-channels')}}</strong></td>
-        <td>
-          {{$tc("count-bands", image.apparentChannels, {count: image.apparentChannels})}}
-          ({{image.channels}} x {{image.samplePerPixel}})
-        </td>
+        <td>{{image.height}}</td>
       </tr>
       <tr>
         <td><strong>{{$t('resolution')}}</strong></td>
-        <td v-if="image.physicalSizeX">{{image.physicalSizeX.toFixed(3)}} {{$t("um-per-pixel")}}</td>
-        <td v-else>{{$t("unknown")}}</td>
-      </tr>
-      <tr v-if="image.depth > 1">
-        <td><strong>{{$t('z-resolution')}}</strong></td>
-        <td v-if="image.physicalSizeZ">{{image.physicalSizeZ.toFixed(3)}} {{$t("um-per-slice")}}</td>
-        <td v-else>{{$t("unknown")}}</td>
-      </tr>
-      <tr v-if="image.duration > 1">
-        <td><strong>{{$t('frame-rate')}}</strong></td>
-        <td v-if="image.fps">{{image.fps.toFixed(3)}} {{$t("frame-per-second")}}</td>
-        <td v-else>{{$t("unknown")}}</td>
+        <td>{{resolution}}</td>
       </tr>
       <tr>
         <td><strong>{{$t('magnification')}}</strong></td>
-        <td v-if="image.magnification">{{image.magnification}}</td>
-        <td v-else>{{$t('unknown')}}</td>
+        <td>{{magnification}}</td>
       </tr>
       <tr>
-        <td><strong>{{ $t('image-metadata') }}</strong></td>
-        <td>
-          <button class="button is-small" @click="$emit('openMetadata')">
-            {{ $t('button-metadata') }}
-          </button>
-        </td>
-      </tr>
-      <tr>
-        <td colspan="2" class="buttons-wrapper">
+        <td colspan="2">
           <div class="buttons">
             <button v-if="canEdit" class="button is-small" @click="calibrationModal = true">
               {{$t('button-set-calibration')}}
@@ -87,14 +49,11 @@
             <router-link :to="`/project/${image.project}/image/${image.id}/information`" class="button is-small">
               {{$t('button-more-info')}}
             </router-link>
-            <a class="button is-small" v-if="canDownloadImages" @click="download(image, shortTermToken)">
-              {{$t('button-download')}}
-            </a>
           </div>
         </td>
       </tr>
       <tr>
-        <td colspan="2" class="buttons-wrapper">
+        <td colspan="2">
           <div class="buttons navigation has-addons">
             <button class="button is-small" @click="previousImage()" :disabled="isFirstImage">
               <i class="fas fa-angle-left fa-lg"></i> {{$t('button-previous-image')}}
@@ -117,10 +76,8 @@
 </template>
 
 <script>
-import {get} from '@/utils/store-helpers';
 import ImageName from '@/components/image/ImageName';
 import CalibrationModal from '@/components/image/CalibrationModal';
-import {appendShortTermToken} from '@/utils/token-utils.js';
 
 export default {
   name: 'information-panel',
@@ -135,12 +92,10 @@ export default {
     return {
       calibrationModal: false,
       isFirstImage: false,
-      isLastImage: false,
+      isLastImage: false
     };
   },
   computed: {
-    currentUser: get('currentUser/user'),
-    shortTermToken: get('currentUser/shortTermToken'),
     viewerModule() {
       return this.$store.getters['currentProject/currentViewerModule'];
     },
@@ -153,31 +108,28 @@ export default {
     image() {
       return this.viewerWrapper.images[this.index].imageInstance;
     },
+    resolution() {
+      if(this.image.resolution) {
+        return this.image.resolution.toFixed(3);
+      }
+      else {
+        return this.$t('unknown');
+      }
+    },
+    magnification() {
+      return this.image.magnification || this.$t('unknown');
+    },
     canEdit() {
       return this.$store.getters['currentProject/canEditImage'](this.image);
-    },
-    canDownloadImages() {
-      // Virtual images (null path) cannot be downloaded.
-      return this.image.path !== null && (
-        this.canManageProject ||
-        ((this.$store.state.currentProject.project || {}).areImagesDownloadable) || false
-      );
-    },
-    canManageProject() {
-      return this.$store.getters['currentProject/canManageProject'];
     },
     isActiveImage() {
       return this.viewerWrapper.activeImage === this.index;
     }
   },
   methods: {
-    appendShortTermToken,
     setResolution(resolution) {
       this.$store.dispatch(this.viewerModule + 'setImageResolution', {idImage: this.image.id, resolution});
       this.$eventBus.$emit('reloadAnnotations', {idImage: this.image.id}); // refresh the sources to update perimeter/area
-    },
-    download(image) {
-      window.location.assign(appendShortTermToken(image.downloadURL, this.shortTermToken));
     },
     async previousImage() {
       try {
@@ -187,8 +139,7 @@ export default {
           this.isFirstImage = true;
         }
         else {
-          let slice = await prev.fetchReferenceSlice();
-          await this.$store.dispatch(this.imageModule + 'setImageInstance', {image: prev, slices: [slice]});
+          await this.$store.dispatch(this.imageModule + 'setImageInstance', prev);
         }
       }
       catch(error) {
@@ -204,8 +155,7 @@ export default {
           this.isLastImage = true;
         }
         else {
-          let slice = await next.fetchReferenceSlice();
-          await this.$store.dispatch(this.imageModule + 'setImageInstance', {image: next, slices: [slice]});
+          await this.$store.dispatch(this.imageModule + 'setImageInstance', next);
         }
       }
       catch(error) {
@@ -249,11 +199,6 @@ td {
 
 td:first-child {
   width: 10em;
-}
-
-.buttons-wrapper {
-  padding-left: 0;
-  padding-right: 0;
 }
 
 .buttons {

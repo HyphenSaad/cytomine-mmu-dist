@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -12,63 +12,60 @@
  See the License for the specific language governing permissions and
  limitations under the License.-->
 
+
 <template>
-<form @submit.prevent="createProject(); loading = true">
-  <b-loading :active="loading" :is-full-page="false" />
+<form @submit.prevent="createProject()">
+  <cytomine-modal :active="active" :title="$t('create-project')" @close="$emit('update:active', false)">
+    <b-field :label="$t('name')" :type="{'is-danger': errors.has('name')}" :message="errors.first('name')">
+      <b-input v-model="name" name="name" v-validate="'required'" />
+    </b-field>
 
-  <template v-if="!loading">
-    <cytomine-modal :active="active" :title="$t('create-project')" @close="$emit('update:active', false)">
-      <b-field :label="$t('name')" :type="{ 'is-danger': errors.has('name') }" :message="errors.first('name')">
-        <b-input v-model="name" name="name" v-validate="'required'" />
-      </b-field>
+    <b-field :label="$t('ontology')">
+      <b-radio v-model="ontology" native-value="NO">
+        {{$t('no-ontology')}}
+      </b-radio>
+    </b-field>
+    <b-field>
+      <b-radio v-model="ontology" native-value="EXISTING">
+        {{$t('use-existing-ontology')}}
+      </b-radio>
+    </b-field>
+    <b-field>
+      <b-radio v-model="ontology" native-value="NEW">
+        {{$t('create-ontology-for-project')}}
+      </b-radio>
+    </b-field>
 
-      <b-field :label="$t('ontology')">
-        <b-radio v-model="ontology" native-value="NEW">
-          {{ $t('create-ontology-for-project') }}
-        </b-radio>
+    <template v-if="ontology === 'EXISTING'">
+      <b-field :type="{'is-danger': errors.has('ontology')}" :message="errors.first('ontology')">
+        <b-select
+          size="is-small"
+          v-model="selectedOntology"
+          :placeholder="$t('select-ontology')"
+          name="ontology"
+          v-validate="'required'"
+        >
+          <option v-for="ontology in ontologies" :value="ontology.id" :key="ontology.id">
+            {{ontology.name}}
+          </option>
+        </b-select>
       </b-field>
-      <b-field>
-        <b-radio v-model="ontology" native-value="EXISTING">
-          {{ $t('use-existing-ontology') }}
-        </b-radio>
-      </b-field>
-      <b-field>
-        <b-radio v-model="ontology" native-value="NO">
-          {{ $t('no-ontology') }}
-        </b-radio>
-      </b-field>
+    </template>
 
-      <template v-if="ontology === 'EXISTING'">
-        <b-field :type="{ 'is-danger': errors.has('ontology') }" :message="errors.first('ontology')">
-          <b-select
-            size="is-small"
-            v-model="selectedOntology"
-            :placeholder="$t('select-ontology')"
-            name="ontology"
-            v-validate="'required'"
-          >
-            <option v-for="ontology in ontologies" :value="ontology.id" :key="ontology.id">
-              {{ ontology.name }}
-            </option>
-          </b-select>
-        </b-field>
-      </template>
-
-      <template #footer>
-        <button class="button" type="button" @click="$emit('update:active', false)">
-          {{ $t('button-cancel') }}
-        </button>
-        <button class="button is-link" :disabled="errors.any()">
-          {{ $t('button-save') }}
-        </button>
-      </template>
-    </cytomine-modal>
-  </template>
+    <template #footer>
+      <button class="button" type="button" @click="$emit('update:active', false)">
+        {{$t('button-cancel')}}
+      </button>
+      <button class="button is-link" :disabled="errors.any()">
+        {{$t('button-save')}}
+      </button>
+    </template>
+  </cytomine-modal>
 </form>
 </template>
 
 <script>
-import {ImageInstance, Project, Ontology} from 'cytomine-client';
+import {Project, Ontology} from 'cytomine-client';
 import CytomineModal from '@/components/utils/CytomineModal';
 
 export default {
@@ -81,18 +78,16 @@ export default {
   $_veeValidate: {validator: 'new'},
   data() {
     return {
-      loading: false,
       name: '',
-      ontology: 'NEW',
-      selectedOntology: null,
-      ufiles: []
+      ontology: 'NO',
+      selectedOntology: null
     };
   },
   watch: {
     active(val) {
       if(val) {
         this.name = '';
-        this.ontology = 'NEW';
+        this.ontology = 'NO';
         this.selectedOntology = null;
       }
     }
@@ -115,21 +110,8 @@ export default {
         }
 
         let project = await new Project({name: this.name, ontology: idOntology}).save();
-
-        if (this.ufiles) {
-          await Promise.all(
-            this.ufiles.map(async (uFile) => await new ImageInstance({
-              baseImage: uFile.image,
-              project: project.id
-            }).save())
-          );
-        }
-
-        this.loading = false;
         this.$notify({type: 'success', text: this.$t('notif-success-project-creation')});
-        this.$emit('update:active', false);
-        this.$store.commit('currentProject/resetMetadataFilters');
-        await this.$router.push(`/project/${project.id}/configuration`);
+        this.$router.push(`/project/${project.id}/configuration`);
       }
       catch(error) {
         if(error.response.status == 409) {
@@ -140,12 +122,6 @@ export default {
         }
       }
     }
-  },
-  mounted() {
-    this.$eventBus.$on('update-ufiles', (ufiles) => this.ufiles = ufiles);
-  },
-  beforeDestroy() {
-    this.$eventBus.$off('update-ufiles');
   }
 };
 </script>

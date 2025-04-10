@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.-->
+
 
 <template>
 <form @submit.prevent="save()">
@@ -60,12 +61,6 @@
       </b-select>
     </b-field>
 
-    <b-field horizontal v-if="isChangingRoleToAdmin()">
-      <b-checkbox v-model="adminConfirm">
-        {{$t('admin-warning')}}
-      </b-checkbox>
-    </b-field>
-
     <b-field :label="$t('language')" horizontal>
       <b-select v-model="internalUser['language']">
         <option v-for="{value, name} in languages" :key="value" :value="value">
@@ -74,18 +69,11 @@
       </b-select>
     </b-field>
 
-    <b-field :label="$t('developer-mode')" horizontal>
-      <b-switch v-model="internalUser.isDeveloper" class="switch">
-        <template v-if="internalUser.isDeveloper">{{$t('yes')}}</template>
-        <template v-else>{{$t('no')}}</template>
-      </b-switch>
-    </b-field>
-
     <template #footer>
       <button class="button" type="button" @click="$emit('update:active', false)">
         {{$t('button-cancel')}}
       </button>
-      <button class="button is-link" :disabled="errors.any() || !isAdminConfirmed()">
+      <button class="button is-link" :disabled="errors.any()">
         {{$t('button-save')}}
       </button>
     </template>
@@ -115,12 +103,9 @@ export default {
       rolesWithIds: null,
       selectedRole: defaultRole,
       displayErrors: false,
-      adminConfirm: false,
       languages: [
         {value: 'EN', name:'English'},
-        {value: 'FR', name:'Français'},
-        {value: 'ES', name:'Español'},
-        {value: 'NL', name:'Nederlands'}
+        {value: 'FR', name:'Français'}
       ]
     };
   },
@@ -148,9 +133,6 @@ export default {
     }
   },
   watch: {
-    selectedRole() {
-      this.adminConfirm = !this.isChangingRoleToAdmin();
-    },
     active(val) {
       if(val) {
         if(!this.rolesWithIds) {
@@ -162,22 +144,10 @@ export default {
         this.selectedRole = this.user ? this.user.role : defaultRole;
         this.internalUser.language = this.user ? this.user.language : defaultLanguage.value;
         this.displayErrors = false;
-        this.adminConfirm = false;
       }
     }
   },
   methods: {
-    isChangingRoleToAdmin() {
-      let currentRole = this.user ? this.user.role : defaultRole;
-      return this.isNotAdmin(currentRole) && !this.isNotAdmin(this.selectedRole);
-    },
-    isNotAdmin(role){
-      return role != 'ROLE_ADMIN' && role != 'ROLE_SUPER_ADMIN';
-    },
-    isAdminConfirmed(){
-      return this.adminConfirm || !this.isChangingRoleToAdmin();
-    },
-    
     async save() {
       let result = await this.$validator.validateAll();
       if(!result) {

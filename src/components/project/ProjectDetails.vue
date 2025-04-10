@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.-->
 
+
 <template>
 <b-message v-if="error" type="is-danger" has-icon icon-size="is-small" size="is-small">
   <h2> {{ $t('error') }} </h2>
@@ -20,10 +21,6 @@
 <table v-else class="table">
   <b-loading :is-full-page="false" :active="loading" class="small" />
   <tbody v-if="!loading">
-    <tr v-if="isPropDisplayed('id') && currentUser.isDeveloper">
-      <td class="prop-label">{{$t('id')}}</td>
-      <td class="prop-content">{{project.id}}</td>
-    </tr>
     <tr v-if="isPropDisplayed('name')">
       <td class="prop-label">{{$t('name')}}</td>
       <td class="prop-content">
@@ -81,13 +78,7 @@
     <tr v-if="isPropDisplayed('properties')">
       <td class="prop-label">{{$t('properties')}}</td>
       <td class="prop-content">
-        <cytomine-properties
-          :object="project"
-          :canEdit="canManageProject"
-          :properties="internalUseFilteredProperties"
-          @deleted="removeProp"
-          @added="addProp"
-        />
+        <cytomine-properties :object="project" :canEdit="canManageProject" />
       </td>
     </tr>
     <tr v-if="isPropDisplayed('attachedFiles')">
@@ -158,11 +149,9 @@ import ListImagesPreview from '@/components/image/ListImagesPreview';
 import ListUsernames from '@/components/user/ListUsernames';
 import ProjectActions from './ProjectActions';
 import CytomineDescription from '@/components/description/CytomineDescription';
-import CytomineProperties from '../property/CytomineProperties';
+import CytomineProperties from '@/components/property/CytomineProperties';
 import CytomineTags from '@/components/tag/CytomineTags';
 import AttachedFiles from '@/components/attached-file/AttachedFiles';
-import {PropertyCollection} from 'cytomine-client';
-import constants from '@/utils/constants.js';
 
 export default {
   name: 'project-details',
@@ -189,16 +178,11 @@ export default {
       managers: [],
       members: [],
       onlines: [],
-      representatives: [],
-      properties: [],
-      loadPropertiesError: false
+      representatives: []
     };
   },
   computed: {
     currentUser: get('currentUser/user'),
-    blindMode() {
-      return ((this.project || {}).blindMode) || false;
-    },
     canManageProject() {
       return this.editable && (this.currentUser.adminByNow || this.managersIds.includes(this.currentUser.id));
     },
@@ -207,9 +191,6 @@ export default {
     },
     contributors() {
       return this.members.filter(member => !this.managersIds.includes(member.id));
-    },
-    internalUseFilteredProperties() {
-      return this.properties.filter(prop => !prop.key.startsWith(constants.PREFIX_HIDDEN_PROPERTY_KEY));
     }
   },
   methods: {
@@ -242,12 +223,6 @@ export default {
         cancelText: this.$t('button-cancel'),
         onConfirm: () => this.$emit('delete')
       });
-    },
-    removeProp(prop) {
-      this.properties = this.properties.filter(p => p.id !== prop.id);
-    },
-    addProp(prop) {
-      this.properties.push(prop);
     }
   },
   async created() {
@@ -263,13 +238,6 @@ export default {
     catch(error) {
       console.log(error);
       this.error = true;
-    }
-    try {
-      this.properties = (await PropertyCollection.fetchAll({ object: this.project })).array;
-    }
-    catch (error) {
-      this.loadPropertiesError = true;
-      console.log(error);
     }
     this.loading = false;
   }

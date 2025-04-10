@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2009-2022. Authors: see NOTICE file.
+<!-- Copyright (c) 2009-2021. Authors: see NOTICE file.
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.-->
 
+
 <template>
 <div class="content-wrapper">
   <div class="panel">
@@ -21,10 +22,6 @@
     </p>
     <div class="panel-block">
       <form @submit.prevent="editDetails()" data-vv-scope="profile">
-        <b-field :label="$t('id')" horizontal v-if="currentUser.isDeveloper">
-          {{currentUser.id}}
-        </b-field>
-
         <b-field :label="$t('username')" horizontal>
           <b-input :value="currentUser.username" disabled />
         </b-field>
@@ -203,9 +200,7 @@ export default {
       confirmPassword: '',
       languages: [
         {value: 'EN', name:'English'},
-        {value: 'FR', name:'Français'},
-        {value: 'ES', name:'Español'},
-        {value: 'NL', name:'Nederlands'}
+        {value: 'FR', name:'Français'}
       ],
     };
   },
