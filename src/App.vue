@@ -12,110 +12,109 @@
  See the License for the specific language governing permissions and
  limitations under the License.-->
 
+
 <template>
-  <div id="app" class="wrapper">
-    <notifications position="top center" width="30%" :max="5">
-      <template #body="props">
-        <div class="notification vue-notification" :class="props.item.type">
-          <button class="delete" @click="props.close"></button>
-          <strong class="notification-title">
-            {{ props.item.title }}
-          </strong>
-          <div class="notification-content" v-html="props.item.text"></div>
-        </div>
-      </template>
-    </notifications>
-
-    <template v-if="!loading">
-      <div class="box error" v-if="communicationError">
-        <h2>
-          {{ $t("communication-error") }}
-        </h2>
-        {{ $t("core-cannot-be-reached") }}
+<div id="app" class="wrapper">
+  <notifications position="top center" width="30%" :max="5">
+    <template #body="props">
+      <div class="notification vue-notification" :class="props.item.type">
+        <button class="delete" @click="props.close"></button>
+        <strong class="notification-title">
+          {{props.item.title}}
+        </strong>
+        <div class="notification-content" v-html="props.item.text"></div>
       </div>
-
-      <login v-else-if="!currentUser" />
-
-      <template v-else>
-        <cytomine-navbar />
-        <div class="bottom">
-          <keep-alive include="cytomine-storage">
-            <router-view v-if="currentUser" />
-          </keep-alive>
-        </div>
-      </template>
     </template>
-  </div>
+  </notifications>
+
+  <template v-if="!loading">
+    <div class="box error" v-if="communicationError">
+      <h2>
+        {{$t('communication-error')}}
+      </h2>
+      {{$t('core-cannot-be-reached')}}
+    </div>
+
+    <login v-else-if="!currentUser" />
+
+    <template v-else>
+      <cytomine-navbar />
+      <div class="bottom">
+        <keep-alive include="cytomine-storage">
+          <router-view v-if="currentUser" />
+        </keep-alive>
+      </div>
+    </template>
+  </template>
+</div>
 </template>
 
 <script>
-import axios from "axios";
-import { get } from "@/utils/store-helpers";
-import { changeLanguageMixin } from "@/lang.js";
+import axios from 'axios';
+import {get} from '@/utils/store-helpers';
+import {changeLanguageMixin} from '@/lang.js';
 
-import CytomineNavbar from "./components/navbar/CytomineNavbar.vue";
-import Login from "./components/user/Login.vue";
+import CytomineNavbar from './components/navbar/CytomineNavbar.vue';
+import Login from './components/user/Login.vue';
 
-import { Cytomine } from "cytomine-client";
+import {Cytomine} from 'cytomine-client';
 
-import constants from "@/utils/constants.js";
-import ifvisible from "ifvisible";
+import constants from '@/utils/constants.js';
+import ifvisible from 'ifvisible';
 ifvisible.setIdleDuration(constants.IDLE_DURATION);
 
 export default {
-  name: "app",
-  components: { CytomineNavbar, Login },
+  name: 'app',
+  components: {CytomineNavbar, Login},
   mixins: [changeLanguageMixin],
   data() {
     return {
       communicationError: false,
       loading: true,
-      timeout: null,
+      timeout: null
     };
   },
   computed: {
-    currentUser: get("currentUser/user"),
-    project: get("currentProject/project"),
+    currentUser: get('currentUser/user'),
+    project: get('currentProject/project')
   },
   methods: {
     async loginWithToken() {
       try {
-        let { shortTermToken } = await Cytomine.instance.loginWithToken(
-          this.$route.query.username,
-          this.$route.query.token
-        );
-        this.$store.commit("currentUser/setShortTermToken", shortTermToken);
+        let {shortTermToken} = await Cytomine.instance.loginWithToken(this.$route.query.username, this.$route.query.token);
+        this.$store.commit('currentUser/setShortTermToken', shortTermToken);
 
         await this.fetchUser();
-      } catch (error) {
+      }
+      catch(error) {
         console.log(error);
-        this.$notify({ type: "error", text: this.$t("invalid-token") });
+        this.$notify({type: 'error', text: this.$t('invalid-token')});
       }
     },
     async ping() {
-      if (!ifvisible.now()) {
+      if(!ifvisible.now()){
         return; // window not visible or inactive user => stop pinging
       }
       try {
-        let { authenticated, shortTermToken } = await Cytomine.instance.ping(
-          this.project ? this.project.id : null
-        );
+        let {authenticated, shortTermToken} = await Cytomine.instance.ping(this.project ? this.project.id : null);
 
-        this.$store.commit("currentUser/setShortTermToken", shortTermToken);
+        this.$store.commit('currentUser/setShortTermToken', shortTermToken);
 
-        if (this.currentUser && !authenticated) {
-          await this.$store.dispatch("logout");
+        if(this.currentUser && !authenticated) {
+          await this.$store.dispatch('logout');
         }
-        if (!this.currentUser && authenticated) {
+        if(!this.currentUser && authenticated) {
           await this.fetchUser();
         }
         this.communicationError = false;
-      } catch (error) {
+      }
+      catch(error) {
         console.log(error);
-        if (error.toString().indexOf("401") !== -1) {
+        if (error.toString().indexOf('401')!==-1) {
           this.communicationError = false;
           Cytomine.instance.logout();
-        } else {
+        }
+        else {
           this.communicationError = true;
         }
       }
@@ -124,29 +123,27 @@ export default {
       this.timeout = setTimeout(this.ping, constants.PING_INTERVAL);
     },
     async fetchUser() {
-      await this.$store.dispatch("currentUser/fetchUser");
-      if (this.currentUser) {
+      await this.$store.dispatch('currentUser/fetchUser');
+      if(this.currentUser) {
         this.changeLanguage(this.currentUser.language);
       }
-    },
+    }
   },
   async created() {
     let settings;
     await axios
-      .get("configuration.json")
-      .then((response) => (settings = response.data));
+      .get('configuration.json')
+      .then(response => (settings = response.data));
 
-    await axios.get("meta-prefixes.json").then((response) => {
-      constants.METADATA_PREFIXES = response.data;
-    });
-
+    await axios
+      .get('meta-prefixes.json')
+      .then(response => {
+        constants.METADATA_PREFIXES = response.data
+      });
+    
     for (let i in settings) {
-      if (
-        Object.prototype.hasOwnProperty.call(constants, i) ||
-        i.includes("_NAMESPACE") ||
-        i.includes("_VERSION") ||
-        i.includes("_ENABLED")
-      ) {
+      if (Object.prototype.hasOwnProperty.call(constants, i)
+        || i.includes('_NAMESPACE') || i.includes('_VERSION') || i.includes('_ENABLED')) {
         constants[i] = settings[i];
       }
     }
@@ -154,26 +151,25 @@ export default {
 
     new Cytomine(constants.CYTOMINE_CORE_HOST);
 
-    if (this.$route.query.token && this.$route.query.username) {
+    if(this.$route.query.token && this.$route.query.username) {
       await this.loginWithToken();
     }
     await this.ping();
     this.loading = false;
-    ifvisible.on("wakeup", this.ping);
-  },
+    ifvisible.on('wakeup', this.ping);
+  }
 };
 </script>
 
 <style lang="scss">
-@import "@/assets/styles/main.scss";
+@import '@/assets/styles/main.scss';
 
 @font-face {
-  font-family: "cytomine";
-  src: url("assets/cytomine-font.woff") format("woff");
+  font-family: 'cytomine';
+  src: url('assets/cytomine-font.woff') format('woff');
 }
 
-html,
-body {
+html, body {
   height: 100vh;
   margin: 0;
   padding: 0;
@@ -181,8 +177,7 @@ body {
 }
 
 body {
-  font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif,
-    sans-serif;
+  font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif, sans-serif;
   color: #333;
   background: #d4d4d4;
 }
@@ -240,8 +235,7 @@ h2 {
   background-color: whitesmoke;
 }
 
-strong,
-.label {
+strong, .label {
   font-weight: 600 !important;
 }
 
