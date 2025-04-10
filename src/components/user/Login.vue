@@ -139,20 +139,20 @@
 </template>
 
 <script>
-import { get } from "@/utils/store-helpers";
-import { changeLanguageMixin } from "@/lang.js";
-import { Cytomine } from "cytomine-client";
-import Register from "./Register";
+import { get } from '@/utils/store-helpers';
+import { changeLanguageMixin } from '@/lang.js';
+import { Cytomine } from 'cytomine-client';
+import Register from './Register';
 
 export default {
-  name: "login",
+  name: 'login',
   components: { Register },
   mixins: [changeLanguageMixin],
   data() {
     return {
-      username: "",
-      password: "",
-      email: "",
+      username: '',
+      password: '',
+      email: '',
       rememberMe: true,
 
       allowedRegistration: false, // TODO: retrieve info from core
@@ -163,12 +163,12 @@ export default {
     };
   },
   computed: {
-    currentUser: get("currentUser/user")
+    currentUser: get('currentUser/user')
   },
   methods: {
     async login() {
       try {
-        await this.$store.dispatch("currentUser/login", {
+        await this.$store.dispatch('currentUser/login', {
           username: this.username,
           password: this.password,
           rememberMe: this.rememberMe
@@ -176,32 +176,35 @@ export default {
         if (this.currentUser) {
           this.changeLanguage(this.currentUser.language);
           this.$notify({
-            type: "success",
-            text: this.$t("notif-success-login")
-          });
-        } else {
-          this.$notify({
-            type: "error",
-            text: this.$t("notif-unexpected-error")
+            type: 'success',
+            text: this.$t('notif-success-login')
           });
         }
-      } catch (error) {
+        else {
+          this.$notify({
+            type: 'error',
+            text: this.$t('notif-unexpected-error')
+          });
+        }
+      }
+      catch (error) {
         console.log(error);
-        this.$notify({ type: "error", text: error.response.data.message });
+        this.$notify({ type: 'error', text: error.response.data.message });
       }
     },
     async sendUsername() {
       try {
         await Cytomine.instance.forgotUsername(this.email);
         this.$notify({
-          type: "success",
-          text: this.$t("notif-success-forgot-username")
+          type: 'success',
+          text: this.$t('notif-success-forgot-username')
         });
         this.forgotUsername = false;
-      } catch (error) {
+      }
+      catch (error) {
         this.$notify({
-          type: "error",
-          text: this.$t("notif-error-forgot-username")
+          type: 'error',
+          text: this.$t('notif-error-forgot-username')
         });
       }
     },
@@ -209,14 +212,15 @@ export default {
       try {
         await Cytomine.instance.forgotPassword(this.username);
         this.$notify({
-          type: "success",
-          text: this.$t("notif-success-forgot-password")
+          type: 'success',
+          text: this.$t('notif-success-forgot-password')
         });
         this.forgotPassword = false;
-      } catch (error) {
+      }
+      catch (error) {
         this.$notify({
-          type: "error",
-          text: this.$t("notif-error-forgot-password")
+          type: 'error',
+          text: this.$t('notif-error-forgot-password')
         });
       }
     }
