@@ -105,10 +105,6 @@ export default {
 
         if (this.currentUser && !authenticated) {
           await this.$store.dispatch("logout");
-          // Redirect to login page if not already there
-          if (this.$route.path !== "/") {
-            this.$router.push("/");
-          }
         }
         if (!this.currentUser && authenticated) {
           await this.fetchUser();
@@ -119,11 +115,6 @@ export default {
         if (error.toString().indexOf("401") !== -1) {
           this.communicationError = false;
           Cytomine.instance.logout();
-          await this.$store.dispatch("logout");
-          // Redirect to login page
-          if (this.$route.path !== "/") {
-            this.$router.push("/");
-          }
         } else {
           this.communicationError = true;
         }
