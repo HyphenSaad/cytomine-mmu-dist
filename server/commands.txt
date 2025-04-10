@@ -1,0 +1,16 @@
+sudo docker cp configs/nginx/nginx.conf nginx:/usr/local/nginx/conf/nginx.conf
+
+sudo docker cp configs/web_ui/nginx.conf web_UI:/etc/nginx/nginx.conf
+
+sudo docker exec -it web_UI bash
+
+docker cp clear_container.sh web_UI:/; docker exec -it web_UI bash
+
+
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout nginx.key -out nginx.crt
+
+sudo docker stop nginx
+
+sudo docker rm nginx
+
+sudo docker create --name nginx --link ims:ims --link iipCyto:iipCyto --link core:core --link iipOff:iipOff --link web_UI:web_UI -v /home/admincyto/data/images/_buffer:/tmp/uploaded -p 80:80 -p 443:443 --restart=unless-stopped cytomine/nginx:v1.3.1
