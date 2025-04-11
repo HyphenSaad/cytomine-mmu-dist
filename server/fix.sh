@@ -4,7 +4,7 @@ clear
 
 REPO_NAME="cytomine-mmu-dist"
 REPO_URL="https://github.com/hyphensaad/$REPO_NAME"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 CLONE_DIR="$SCRIPT_DIR/$REPO_NAME"
 DEST_CONTAINER="web_UI"
 DEST_PATH="/app"
@@ -41,9 +41,9 @@ for file in *; do
 done
 
 echo "Stopping Docker Containers:"
-docker stop memcached iipCyto bioformat ims mongodb postgresql rabbitmq core iipOff web_UI nginx
+docker stop memcached rabbitmq postgresql mongodb slurm iipOff iipCyto bioformat ims core web_UI nginx software_router
 
 echo "Starting Docker Containers:"
-docker start memcached iipCyto bioformat ims mongodb postgresql rabbitmq core iipOff web_UI nginx
+docker start memcached rabbitmq postgresql mongodb slurm iipOff iipCyto bioformat ims core web_UI nginx software_router
 
 echo "All files copied and containers restarted successfully."
